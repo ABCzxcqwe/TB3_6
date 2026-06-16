@@ -3,6 +3,8 @@
 #  Adaptado al diagrama UML (Grupo 6)
 # ─────────────────────────────────────────────
 
+from abc import ABC, abstractmethod
+
 from modelos import (Ambiente, Cliente, Reserva,
                      ServicioAdicional, EstadoReserva)
 from repositorios import (AmbienteRepository, ClienteRepository,
@@ -18,12 +20,33 @@ def _generar_id(lista: list, prefijo: str) -> str:
     return f"{prefijo}-{(max(ids) + 1):03d}" if ids else f"{prefijo}-001"
 
 
+# ==================== BASE SERVICE (interfaz de servicios) ====================
+
+class BaseService(ABC):
+    """Interfaz base que todos los servicios de negocio deben implementar.
+    Define el contrato CRUD mínimo y permite uso polimórfico."""
+
+    @abstractmethod
+    def listar_todos(self) -> list:
+        """Retorna todos los registros gestionados por este servicio."""
+
+    @abstractmethod
+    def eliminar(self, id: str) -> bool:
+        """Elimina el registro con el id dado. Retorna True si existía."""
+
+    @abstractmethod
+    def actualizar(self, id: str, datos: dict) -> bool:
+        """Actualiza campos del registro. Retorna True si existía."""
+
+
 # ==================== AMBIENTE SERVICE ====================
 
-class AmbienteService:
+class AmbienteService(BaseService):
 
-    def __init__(self, ambiente_repo: AmbienteRepository = None):
+    def __init__(self, ambiente_repo: AmbienteRepository = None,
+                 reserva_repo: ReservaRepository = None):
         self.ambiente_repo = ambiente_repo or AmbienteRepository()
+        self.reserva_repo  = reserva_repo  or ReservaRepository()
 
     def registrar_ambiente(self, datos: dict) -> Ambiente:
         ambiente = Ambiente(
@@ -50,6 +73,13 @@ class AmbienteService:
     def eliminar_ambiente(self, id: str) -> bool:
         return self.ambiente_repo.eliminar(id)
 
+    # ── Implementación de BaseService ─────────
+    def eliminar(self, id: str) -> bool:
+        return self.eliminar_ambiente(id)
+
+    def actualizar(self, id: str, datos: dict) -> bool:
+        return self.actualizar_ambiente(id, datos)
+
     def listar_todos(self) -> list:
         return self.ambiente_repo.obtener_todos()
 
@@ -62,15 +92,13 @@ class AmbienteService:
     def verificar_disponibilidad(self, id: str, fecha: str,
                                   hora_inicio: str, hora_fin: str) -> bool:
         """Devuelve True si el ambiente está libre en ese horario."""
-        from repositorios import ReservaRepository
-        repo_res = ReservaRepository()
-        return not repo_res.verificar_conflictos(
+        return not self.reserva_repo.verificar_conflictos(
             id, fecha, hora_inicio, hora_fin)
 
 
 # ==================== CLIENTE SERVICE ====================
 
-class ClienteService:
+class ClienteService(BaseService):
 
     def __init__(self, cliente_repo: ClienteRepository = None):
         self.cliente_repo = cliente_repo or ClienteRepository()
@@ -110,16 +138,26 @@ class ClienteService:
     def eliminar_cliente(self, id: str) -> bool:
         return self.cliente_repo.eliminar(id)
 
+    # ── Implementación de BaseService ─────────
+    def eliminar(self, id: str) -> bool:
+        return self.eliminar_cliente(id)
+
+    def actualizar(self, id: str, datos: dict) -> bool:
+        return self.actualizar_cliente(id, datos)
+
     def listar_todos(self) -> list:
         return self.cliente_repo.obtener_todos()
 
     def buscar_por_email(self, email: str) -> dict:
         return self.cliente_repo.buscar_por_email(email)
 
+    def buscar_por_documento(self, documento: str) -> dict:
+        return self.cliente_repo.buscar_por_documento(documento)
+
 
 # ==================== SERVICIO ADICIONAL SERVICE ====================
 
-class ServicioService:
+class ServicioService(BaseService):
 
     def __init__(self, servicio_repo: ServicioRepository = None):
         self.servicio_repo = servicio_repo or ServicioRepository()
@@ -147,6 +185,13 @@ class ServicioService:
 
     def eliminar_servicio(self, id: str) -> bool:
         return self.servicio_repo.eliminar(id)
+
+    # ── Implementación de BaseService ─────────
+    def eliminar(self, id: str) -> bool:
+        return self.eliminar_servicio(id)
+
+    def actualizar(self, id: str, datos: dict) -> bool:
+        return self.actualizar_servicio(id, datos)
 
     def listar_todos(self) -> list:
         return self.servicio_repo.obtener_todos()
@@ -219,8 +264,8 @@ class ReservaService:
             print("  ✘ El horario es inválido (inicio >= fin).")
             return None
 
-        # Agregar servicios adicionales si los hay
-        filas_srv = []
+        # Agregar servicios adicionales si los hay (solo al objeto; IDs se asignan después)
+        servicios_procesados = []
         if servicios:
             for item in servicios:
                 srv_dict = self.servicio_repo.buscar(item["servicio_id"])
@@ -232,22 +277,27 @@ class ReservaService:
                         srv_dict.get("descripcion", ""),
                     )
                     reserva.agregar_servicio(srv, int(item["cantidad"]))
-                    filas_srv.append({
-                        "reserva_id":  reserva.get_id(),
+                    servicios_procesados.append({
                         "servicio_id": srv_dict["id"],
                         "cantidad":    item["cantidad"],
-                        "costo":       srv.calcular_costo(
-                            int(item["cantidad"])),
+                        "costo":       srv.calcular_costo(int(item["cantidad"])),
                     })
 
         reserva.calcular_costo_total()
         reserva.cambiar_estado(EstadoReserva.CONFIRMADA.value)
 
-        # Asignar ID incremental
+        # Asignar ID incremental y corregir IDs de relaciones
         todos    = self.reserva_repo.obtener_todos()
         nuevo_id = _generar_id(todos, "RES")
         d = reserva.to_dict()
-        d["id"] = nuevo_id
+        d["id"]          = nuevo_id
+        d["ambiente_id"] = amb_dict["id"]   # usar AMB-001, no el UUID interno
+        d["cliente_id"]  = cli_dict["id"]   # usar CLI-001, no el UUID interno
+
+        # Armar filas_srv con el nuevo_id ya definido
+        filas_srv = [
+            {"reserva_id": nuevo_id, **s} for s in servicios_procesados
+        ]
 
         self.reserva_repo.guardar(d, filas_srv)
         print(f"  ✔ Reserva creada: [{nuevo_id}] "
@@ -278,11 +328,11 @@ class ReservaService:
                                   servicio_id: str,
                                   cantidad: int) -> bool:
         if not self.reserva_repo.buscar(reserva_id):
-            print(f"  ✘ Reserva {reserva_id} no encontrada.")
+            print(f"  \u2718 Reserva {reserva_id} no encontrada.")
             return False
         srv = self.servicio_repo.buscar(servicio_id)
         if not srv:
-            print(f"  ✘ Servicio {servicio_id} no encontrado.")
+            print(f"  \u2718 Servicio {servicio_id} no encontrado.")
             return False
         costo = float(srv["costo_unitario"]) * cantidad
         fila = {
@@ -291,29 +341,17 @@ class ReservaService:
             "cantidad":    cantidad,
             "costo":       costo,
         }
-        from csv_helper import CSVHelper
-        CSVHelper.escribir_csv(
-            ReservaRepository.ARCHIVO_SERVICIOS,
-            [fila],
-            ReservaRepository.CAMPOS_SERVICIOS,
-        )
-        print(f"  ✔ Servicio {servicio_id} agregado a reserva {reserva_id}.")
+        self.reserva_repo.agregar_servicio(fila)
+        print(f"  \u2714 Servicio {servicio_id} agregado a reserva {reserva_id}.")
         return True
 
     def quitar_servicio_reserva(self, reserva_id: str,
                                  servicio_id: str) -> bool:
-        from csv_helper import CSVHelper
-        todos = CSVHelper.leer_csv(
-            ReservaRepository.ARCHIVO_SERVICIOS,
-            ReservaRepository.CAMPOS_SERVICIOS)
-        filtrados = [s for s in todos
-                     if not (s["reserva_id"] == reserva_id
-                             and s["servicio_id"] == servicio_id)]
-        if len(filtrados) == len(todos):
-            return False
-        CSVHelper._reescribir(
-            ReservaRepository.ARCHIVO_SERVICIOS, filtrados)
-        return True
+        ok = self.reserva_repo.quitar_servicio(reserva_id, servicio_id)
+        if not ok:
+            print(f"  \u2718 No se encontr\u00f3 el servicio {servicio_id} "
+                  f"en la reserva {reserva_id}.")
+        return ok
 
     def obtener_reserva(self, id: str) -> dict:
         return self.reserva_repo.buscar(id)
@@ -323,6 +361,9 @@ class ReservaService:
 
     def listar_reservas_por_fecha(self, fecha: str) -> list:
         return self.reserva_repo.filtrar_por_fecha(fecha)
+
+    def listar_reservas_por_ambiente(self, ambiente_id: str) -> list:
+        return self.reserva_repo.filtrar_por_ambiente(ambiente_id)
 
     def listar_reservas_por_cliente(self, cliente_id: str) -> list:
         return self.reserva_repo.filtrar_por_cliente(cliente_id)
@@ -406,14 +447,13 @@ class ReporteService:
 
     def generar_reporte_servicios_mas_solicitados(
             self, fecha_inicio: str = "", fecha_fin: str = "") -> list:
-        from csv_helper import CSVHelper
-        from repositorios import ReservaRepository as RR
-        todos = CSVHelper.leer_csv(
-            RR.ARCHIVO_SERVICIOS, RR.CAMPOS_SERVICIOS)
+        # Obtiene todos los servicios de todas las reservas via el repositorio
+        reservas = self.reserva_repo.obtener_todas()
         conteo: dict = {}
-        for s in todos:
-            sid = s["servicio_id"]
-            conteo[sid] = conteo.get(sid, 0) + int(s.get("cantidad", 1))
+        for r in reservas:
+            for s in self.reserva_repo.obtener_servicios_reserva(r["id"]):
+                sid = s["servicio_id"]
+                conteo[sid] = conteo.get(sid, 0) + int(s.get("cantidad", 1))
         resultado = [{"servicio_id": k, "total": v}
                      for k, v in conteo.items()]
         return sorted(resultado, key=lambda x: x["total"], reverse=True)

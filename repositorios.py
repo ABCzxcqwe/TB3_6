@@ -209,6 +209,25 @@ class ReservaRepository(IRepository):
         return [r for r in self.obtener_todos()
                 if fecha_ini <= r["fecha"] <= fecha_fin]
 
+    def agregar_servicio(self, fila: dict) -> None:
+        """Agrega una fila a reservas_servicios.csv."""
+        self.csv_helper.escribir_csv(
+            self.ARCHIVO_SERVICIOS, [fila], self.CAMPOS_SERVICIOS)
+
+    def quitar_servicio(self, reserva_id: str,
+                        servicio_id: str) -> bool:
+        """Elimina la fila de un servicio en reservas_servicios.csv.
+        Retorna True si existía y fue eliminada."""
+        todos = self.csv_helper.leer_csv(
+            self.ARCHIVO_SERVICIOS, self.CAMPOS_SERVICIOS)
+        filtrados = [s for s in todos
+                     if not (s["reserva_id"] == reserva_id
+                             and s["servicio_id"] == servicio_id)]
+        if len(filtrados) == len(todos):
+            return False
+        self.csv_helper._reescribir(self.ARCHIVO_SERVICIOS, filtrados)
+        return True
+
     def verificar_conflictos(self, ambiente_id: str, fecha: str,
                               hora_inicio: str, hora_fin: str) -> bool:
         """Retorna True si HAY conflicto (el horario está ocupado)."""

@@ -19,7 +19,7 @@ _cli_repo = ClienteRepository()
 _res_repo = ReservaRepository()
 _srv_repo = ServicioRepository()
 
-amb_svc = AmbienteService(ambiente_repo=_amb_repo)
+amb_svc = AmbienteService(ambiente_repo=_amb_repo, reserva_repo=_res_repo)
 cli_svc = ClienteService(cliente_repo=_cli_repo)
 srv_svc = ServicioService(servicio_repo=_srv_repo)
 res_svc = ReservaService(reserva_repo=_res_repo,
@@ -181,8 +181,7 @@ def menu_clientes():
 
         elif op == "3":
             doc = input("  Número de documento: ").strip()
-            c   = cli_svc.obtener_cliente.__func__  # usar repo directamente
-            c   = _cli_repo.buscar_por_documento(doc)
+            c   = cli_svc.buscar_por_documento(doc)
             separador("RESULTADO DE BÚSQUEDA")
             if c:
                 print(f"  [{c['id']}] {c['nombre']} | "
@@ -389,8 +388,7 @@ def menu_reservas():
 
         elif op == "5":
             amb_id = input("  ID del ambiente: ").strip()
-            reservas = res_svc.listar_reservas_por_fecha.__doc__  # solo para evitar lint
-            reservas = _res_repo.filtrar_por_ambiente(amb_id)
+            reservas = res_svc.listar_reservas_por_ambiente(amb_id)
             separador(f"RESERVAS DE AMBIENTE {amb_id}")
             if not reservas:
                 print("  No hay reservas confirmadas para ese ambiente.")
