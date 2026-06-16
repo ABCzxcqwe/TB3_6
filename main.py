@@ -106,7 +106,12 @@ def menu_ambientes():
             pausar()
 
         elif op == "5":
-            minima = int(input("  Capacidad mínima: "))
+            try:
+                minima = int(input("  Capacidad mínima: "))
+            except ValueError:
+                print("  ✘ Ingresa un número válido.")
+                pausar()
+                continue
             resultados = [a for a in amb_svc.listar_todos()
                           if int(a["capacidad"]) >= minima]
             separador(f"AMBIENTES CON CAPACIDAD >= {minima}")
@@ -276,9 +281,14 @@ def menu_catalogo_servicios():
             pausar()
 
         elif op == "4":
-            srv_id   = input("  ID del servicio: ").strip()
-            cantidad = int(input("  Cantidad: "))
-            costo    = srv_svc.calcular_costo_servicio(srv_id, cantidad)
+            srv_id = input("  ID del servicio: ").strip()
+            try:
+                cantidad = int(input("  Cantidad: "))
+            except ValueError:
+                print("  ✘ Ingresa un número válido.")
+                pausar()
+                continue
+            costo = srv_svc.calcular_costo_servicio(srv_id, cantidad)
             print(f"\n  Costo total: S/. {costo:.2f}")
             pausar()
 
@@ -340,7 +350,11 @@ def menu_reservas():
             servicios = []
             while agregar_srvs == "s":
                 sid = input("    ID del servicio: ").strip()
-                qty = int(input("    Cantidad: "))
+                try:
+                    qty = int(input("    Cantidad: "))
+                except ValueError:
+                    print("  ✘ Ingresa un número válido para cantidad.")
+                    continue
                 servicios.append({"servicio_id": sid, "cantidad": qty})
                 agregar_srvs = input("  ¿Agregar otro servicio? (s/n): ").strip().lower()
             res_svc.crear_reserva(datos_reserva, servicios or None)
@@ -422,7 +436,12 @@ def menu_reservas():
             separador("AGREGAR SERVICIO A RESERVA")
             res_id = input("  ID de la reserva: ").strip()
             srv_id = input("  ID del servicio del catálogo: ").strip()
-            qty    = int(input("  Cantidad: "))
+            try:
+                qty = int(input("  Cantidad: "))
+            except ValueError:
+                print("  ✘ Ingresa un número válido.")
+                pausar()
+                continue
             res_svc.agregar_servicio_reserva(res_id, srv_id, qty)
             pausar()
 

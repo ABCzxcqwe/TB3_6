@@ -49,13 +49,18 @@ class AmbienteService(BaseService):
         self.reserva_repo  = reserva_repo  or ReservaRepository()
 
     def registrar_ambiente(self, datos: dict) -> Ambiente:
+        try:
+            capacidad       = int(datos["capacidad"])
+            precio_por_hora = float(datos["precio_por_hora"])
+        except (ValueError, KeyError) as e:
+            print(f"  ✘ Datos inválidos: {e}")
+            return None
         ambiente = Ambiente(
             nombre          = datos["nombre"],
             tipo            = datos["tipo"],
-            capacidad       = int(datos["capacidad"]),
-            precio_por_hora = float(datos["precio_por_hora"]),
+            capacidad       = capacidad,
+            precio_por_hora = precio_por_hora,
         )
-        # Sobreescribir el id autogenerado con uno incremental
         todos    = self.ambiente_repo.obtener_todos()
         nuevo_id = _generar_id(todos, "AMB")
         d = ambiente.to_dict()
@@ -163,9 +168,14 @@ class ServicioService(BaseService):
         self.servicio_repo = servicio_repo or ServicioRepository()
 
     def registrar_servicio(self, datos: dict) -> ServicioAdicional:
+        try:
+            costo_unitario = float(datos["costo_unitario"])
+        except (ValueError, KeyError) as e:
+            print(f"  ✘ Costo unitario inválido: {e}")
+            return None
         srv = ServicioAdicional(
             nombre         = datos["nombre"],
-            costo_unitario = float(datos["costo_unitario"]),
+            costo_unitario = costo_unitario,
             tipo_servicio  = datos["tipo_servicio"],
             descripcion    = datos.get("descripcion", ""),
         )
@@ -204,7 +214,10 @@ class ServicioService(BaseService):
         srv = self.servicio_repo.buscar(servicio_id)
         if not srv:
             return 0.0
-        return float(srv["costo_unitario"]) * cantidad
+        try:
+            return float(srv["costo_unitario"]) * cantidad
+        except (ValueError, TypeError):
+            return 0.0
 
 
 # ==================== RESERVA SERVICE ====================
@@ -246,10 +259,14 @@ class ReservaService:
             print("  ✘ El horario solicitado no está disponible.")
             return None
 
-        # Construir objetos de dominio para la Reserva
+        try:
+            capacidad_amb = int(amb_dict["capacidad"])
+            precio_amb    = float(amb_dict["precio_por_hora"])
+        except (ValueError, KeyError) as e:
+            print(f"  ✘ Datos del ambiente corruptos: {e}")
+            return None
         ambiente = Ambiente(amb_dict["nombre"], amb_dict["tipo"],
-                            int(amb_dict["capacidad"]),
-                            float(amb_dict["precio_por_hora"]))
+                            capacidad_amb, precio_amb)
         cliente  = Cliente(cli_dict["nombre"], cli_dict["email"],
                            cli_dict["telefono"],
                            cli_dict.get("direccion", ""),
@@ -270,9 +287,14 @@ class ReservaService:
             for item in servicios:
                 srv_dict = self.servicio_repo.buscar(item["servicio_id"])
                 if srv_dict:
+                    try:
+                        costo_srv = float(srv_dict["costo_unitario"])
+                    except (ValueError, TypeError):
+                        print(f"  ✘ Costo inválido en servicio {item['servicio_id']}.")
+                        continue
                     srv = ServicioAdicional(
                         srv_dict["nombre"],
-                        float(srv_dict["costo_unitario"]),
+                        costo_srv,
                         srv_dict["tipo_servicio"],
                         srv_dict.get("descripcion", ""),
                     )
@@ -334,7 +356,11 @@ class ReservaService:
         if not srv:
             print(f"  \u2718 Servicio {servicio_id} no encontrado.")
             return False
-        costo = float(srv["costo_unitario"]) * cantidad
+        try:
+            costo = float(srv["costo_unitario"]) * cantidad
+        except (ValueError, TypeError):
+            print(f"  ✘ Costo unitario inválido en servicio {servicio_id}.")
+            return False
         fila = {
             "reserva_id":  reserva_id,
             "servicio_id": servicio_id,
@@ -418,11 +444,14 @@ class ReporteService:
                 continue
             aid = r["ambiente_id"]
             if aid in amb_dict:
-                h_ini = int(r["hora_inicio"].replace(":", ""))
-                h_fin = int(r["hora_fin"].replace(":", ""))
-                horas = (h_fin - h_ini) / 100
-                precio = float(amb_dict[aid]["precio_por_hora"])
-                ingresos[aid] = ingresos.get(aid, 0) + horas * precio
+                try:
+                    h_ini = int(r["hora_inicio"].replace(":", ""))
+                    h_fin = int(r["hora_fin"].replace(":", ""))
+                    horas = (h_fin - h_ini) / 100
+                    precio = float(amb_dict[aid]["precio_por_hora"])
+                    ingresos[aid] = ingresos.get(aid, 0) + horas * precio
+                except (ValueError, KeyError, TypeError):
+                    continue
 
         return {aid: round(val, 2) for aid, val in ingresos.items()}
 

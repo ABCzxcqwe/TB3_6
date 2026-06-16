@@ -60,12 +60,18 @@ class AmbienteRepository(IRepository):
                 if a["tipo"].lower() == tipo.lower()]
 
     def filtrar_por_capacidad_minima(self, capacidad: int) -> list:
-        return [a for a in self.obtener_todos()
-                if int(a["capacidad"]) >= capacidad]
+        resultado = []
+        for a in self.obtener_todos():
+            try:
+                if int(a["capacidad"]) >= capacidad:
+                    resultado.append(a)
+            except (ValueError, KeyError):
+                continue
+        return resultado
 
     def obtener_disponibles(self) -> list:
         return [a for a in self.obtener_todos()
-                if str(a["esta_disponible"]).lower()
+                if str(a.get("esta_disponible", "")).lower()
                 in ("true", "1", "sí", "si")]
 
 
