@@ -178,10 +178,8 @@ class ReservaRepository(IRepository):
     def eliminar(self, id: str) -> bool:
         ok = self.csv_helper.eliminar_csv(self.ARCHIVO, id)
         # También elimina los servicios asociados
-        servicios = self.obtener_servicios_reserva(id)
-        for s in servicios:
-            self.csv_helper.eliminar_csv(
-                self.ARCHIVO_SERVICIOS, s["reserva_id"])
+        self.csv_helper.eliminar_csv(
+            self.ARCHIVO_SERVICIOS, id, campo="reserva_id")
         return ok
 
     def actualizar(self, id: str, datos: dict) -> bool:

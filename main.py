@@ -112,8 +112,7 @@ def menu_ambientes():
                 print("  ✘ Ingresa un número válido.")
                 pausar()
                 continue
-            resultados = [a for a in amb_svc.listar_todos()
-                          if int(a["capacidad"]) >= minima]
+            resultados = amb_svc.buscar_por_capacidad_minima(minima)
             separador(f"AMBIENTES CON CAPACIDAD >= {minima}")
             for a in resultados:
                 print(f"  [{a['id']}] {a['nombre']} | Cap: {a['capacidad']}")

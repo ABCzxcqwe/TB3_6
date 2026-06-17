@@ -1,0 +1,40 @@
+
+
+DESCRIPCION DE CADA COLUMNA:
+
+- id
+    Identificador unico de la reserva.
+    Ejemplo: 1
+
+- fecha
+    Fecha del evento.
+    Ejemplo: 2026-04-10
+
+- tipo_evento
+    Tipo de evento.
+    Ejemplo: Boda
+
+- ambiente
+    Ambiente o salon reservado.
+    Ejemplo: Salon 12
+
+- servicio
+    Servicio adicional contratado.
+    Ejemplo: Catering
+
+- hora_inicio
+    Hora de inicio (HH:MM).
+    Ejemplo: 10:45
+
+- capacidad
+    Capacidad de personas del ambiente. [numerico]
+    Ejemplo: 267
+
+- horas
+    Duracion del evento en horas. [numerico]
+    Ejemplo: 6
+
+- monto
+    Monto total de la reserva en soles. [numerico]
+    Ejemplo: 2035.47
+

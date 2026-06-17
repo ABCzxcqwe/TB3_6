@@ -50,11 +50,11 @@ class CSVHelper:
             return False
 
     @staticmethod
-    def eliminar_csv(ruta: str, id: str) -> bool:
-        """Elimina el registro con el id indicado. Retorna True si lo encontró."""
+    def eliminar_csv(ruta: str, valor: str, campo: str = "id") -> bool:
+        """Elimina registros donde `campo` == `valor`. Retorna True si encontró algo."""
         try:
             todos = CSVHelper.leer_csv(ruta, [])
-            filtrados = [r for r in todos if r.get("id") != id]
+            filtrados = [r for r in todos if r.get(campo) != valor]
             if len(filtrados) == len(todos):
                 return False
             CSVHelper._reescribir(ruta, filtrados)

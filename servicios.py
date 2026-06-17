@@ -11,15 +11,6 @@ from repositorios import (AmbienteRepository, ClienteRepository,
                            ReservaRepository, ServicioRepository)
 
 
-def _generar_id(lista: list, prefijo: str) -> str:
-    """Genera un ID incremental con prefijo. Ej: AMB-001"""
-    if not lista:
-        return f"{prefijo}-001"
-    ids = [int(item["id"].split("-")[1])
-           for item in lista if "-" in item.get("id", "")]
-    return f"{prefijo}-{(max(ids) + 1):03d}" if ids else f"{prefijo}-001"
-
-
 # ==================== BASE SERVICE (interfaz de servicios) ====================
 
 class BaseService(ABC):
@@ -37,6 +28,15 @@ class BaseService(ABC):
     @abstractmethod
     def actualizar(self, id: str, datos: dict) -> bool:
         """Actualiza campos del registro. Retorna True si existía."""
+
+    @staticmethod
+    def _generar_id(lista: list, prefijo: str) -> str:
+        """Genera un ID incremental con prefijo. Ej: AMB-001"""
+        if not lista:
+            return f"{prefijo}-001"
+        ids = [int(item["id"].split("-")[1])
+               for item in lista if "-" in item.get("id", "")]
+        return f"{prefijo}-{(max(ids) + 1):03d}" if ids else f"{prefijo}-001"
 
 
 # ==================== AMBIENTE SERVICE ====================
@@ -62,7 +62,7 @@ class AmbienteService(BaseService):
             precio_por_hora = precio_por_hora,
         )
         todos    = self.ambiente_repo.obtener_todos()
-        nuevo_id = _generar_id(todos, "AMB")
+        nuevo_id = self._generar_id(todos, "AMB")
         d = ambiente.to_dict()
         d["id"] = nuevo_id
         self.ambiente_repo.guardar(d)
@@ -93,6 +93,9 @@ class AmbienteService(BaseService):
 
     def buscar_por_tipo(self, tipo: str) -> list:
         return self.ambiente_repo.filtrar_por_tipo(tipo)
+
+    def buscar_por_capacidad_minima(self, minima: int) -> list:
+        return self.ambiente_repo.filtrar_por_capacidad_minima(minima)
 
     def verificar_disponibilidad(self, id: str, fecha: str,
                                   hora_inicio: str, hora_fin: str) -> bool:
@@ -127,7 +130,7 @@ class ClienteService(BaseService):
             return None
 
         todos    = self.cliente_repo.obtener_todos()
-        nuevo_id = _generar_id(todos, "CLI")
+        nuevo_id = self._generar_id(todos, "CLI")
         d = cliente.to_dict()
         d["id"] = nuevo_id
         self.cliente_repo.guardar(d)
@@ -180,7 +183,7 @@ class ServicioService(BaseService):
             descripcion    = datos.get("descripcion", ""),
         )
         todos    = self.servicio_repo.obtener_todos()
-        nuevo_id = _generar_id(todos, "SRV")
+        nuevo_id = self._generar_id(todos, "SRV")
         d = srv.to_dict()
         d["id"] = nuevo_id
         self.servicio_repo.guardar(d)
@@ -222,7 +225,7 @@ class ServicioService(BaseService):
 
 # ==================== RESERVA SERVICE ====================
 
-class ReservaService:
+class ReservaService(BaseService):
 
     def __init__(self,
                  reserva_repo:  ReservaRepository  = None,
@@ -233,6 +236,16 @@ class ReservaService:
         self.ambiente_repo = ambiente_repo or AmbienteRepository()
         self.cliente_repo  = cliente_repo  or ClienteRepository()
         self.servicio_repo = servicio_repo or ServicioRepository()
+
+    # ── Implementación de BaseService ─────────
+    def listar_todos(self) -> list:
+        return self.listar_reservas()
+
+    def eliminar(self, id: str) -> bool:
+        return self.reserva_repo.eliminar(id)
+
+    def actualizar(self, id: str, datos: dict) -> bool:
+        return self.reserva_repo.actualizar(id, datos)
 
     def crear_reserva(self, datos_reserva: dict,
                       servicios: list = None) -> Reserva:
@@ -310,7 +323,7 @@ class ReservaService:
 
         # Asignar ID incremental y corregir IDs de relaciones
         todos    = self.reserva_repo.obtener_todos()
-        nuevo_id = _generar_id(todos, "RES")
+        nuevo_id = self._generar_id(todos, "RES")
         d = reserva.to_dict()
         d["id"]          = nuevo_id
         d["ambiente_id"] = amb_dict["id"]   # usar AMB-001, no el UUID interno

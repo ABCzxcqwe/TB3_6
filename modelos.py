@@ -60,8 +60,11 @@ class Ambiente:
     # ── Métodos UML ───────────────────────────
     def validar_disponibilidad(self, fecha: str,
                                hora_inicio: str, hora_fin: str) -> bool:
-        """Placeholder; la validación real se delega al repositorio."""
-        return self.__esta_disponible
+        if not self.__esta_disponible:
+            return False
+        if hora_inicio >= hora_fin:
+            return False
+        return True
 
     def calcular_costo(self, horas: int) -> float:
         return horas * self.__precio_por_hora
