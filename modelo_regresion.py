@@ -33,14 +33,14 @@ plt.close()
 
 
 # ---------- FASE 3: LIMPIAR LOS DATOS ----------
-columnas_con_nulos = ["capacidad", "horas", "monto", "tipo_evento", "servicio", "evento_grande"]
-df_clean = df.dropna(subset=columnas_con_nulos)
+columnas_a_usar = ["tipo_evento", "ambiente", "servicio", "capacidad", "horas", "monto"]
+df_clean = df.dropna(subset=columnas_a_usar)
 print(f"\nFASE 3 - Datos limpios: {df_clean.shape[0]} filas, {df.shape[0] - df_clean.shape[0]} eliminadas")
 
 
 # ---------- FASE 4: PREPARAR LOS DATOS ----------
 y = df_clean["monto"]
-X = df_clean[["capacidad", "horas", "tipo_evento", "servicio", "evento_grande"]]
+X = df_clean[["tipo_evento", "ambiente", "servicio", "capacidad", "horas"]]
 X = pd.get_dummies(X)
 print(f"FASE 4 - Listo. Columnas para predecir: {X.shape[1]}")
 
@@ -85,9 +85,9 @@ print(f"\nIntercept (monto base): S/ {modelo.intercept_:.2f}")
 # ---------- FASE 8: PREDICCION DE EJEMPLO ----------
 print("\nFASE 8 - Prediccion de ejemplo:")
 ejemplo = pd.DataFrame([{
-    "capacidad": 300, "horas": 6,
-    "tipo_evento": "Boda", "servicio": "Catering", "evento_grande": "Si"
+    "tipo_evento": "Boda", "ambiente": "Salon 12",
+    "servicio": "Catering", "capacidad": 300, "horas": 6
 }])
 ejemplo = pd.get_dummies(ejemplo).reindex(columns=X.columns, fill_value=0)
 pred = modelo.predict(ejemplo)[0]
-print(f"  Boda, 300 personas, 6 horas, Catering -> S/ {pred:.2f}")
+print(f"  Boda, Salon 12, 300 personas, 6 horas, Catering -> S/ {pred:.2f}")
