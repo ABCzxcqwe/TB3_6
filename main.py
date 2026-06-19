@@ -12,6 +12,8 @@ from repositorios import (AmbienteRepository, ClienteRepository,
 from servicios import (AmbienteService, ClienteService,
                        ReservaService, ServicioService, ReporteService)
 from modelos import TipoAmbiente, TipoServicio, EstadoReserva
+from data_analysis import ejecutar_analisis_completo
+from modelo_regresion import ejecutar_regresion_completa
 
 # ── Inyección de dependencias (según UML) ─────
 _amb_repo = AmbienteRepository()
@@ -554,6 +556,26 @@ def menu_reportes():
 
 
 # ══════════════════════════════════════════════
+#  MÓDULO 6 — ANÁLISIS DE DATOS
+# ══════════════════════════════════════════════
+
+def menu_analisis_datos():
+    separador("ANÁLISIS DE DATOS")
+    ejecutar_analisis_completo()
+    pausar()
+
+
+# ══════════════════════════════════════════════
+#  MÓDULO 7 — MODELO DE REGRESIÓN
+# ══════════════════════════════════════════════
+
+def menu_regresion():
+    separador("MODELO DE REGRESIÓN LINEAL")
+    ejecutar_regresion_completa()
+    pausar()
+
+
+# ══════════════════════════════════════════════
 #  MENÚ PRINCIPAL
 # ══════════════════════════════════════════════
 
@@ -569,6 +591,8 @@ def main():
         print("  3. Catálogo de Servicios Adicionales")
         print("  4. Gestión de Reservas")
         print("  5. Reportes")
+        print("  6. Análisis de Datos")
+        print("  7. Modelo de Regresión Lineal")
         print("  0. Salir")
         separador()
         op = input("  Opción: ").strip()
@@ -578,6 +602,8 @@ def main():
         elif op == "3": menu_catalogo_servicios()
         elif op == "4": menu_reservas()
         elif op == "5": menu_reportes()
+        elif op == "6": menu_analisis_datos()
+        elif op == "7": menu_regresion()
         elif op == "0":
             print("\n  Hasta luego.\n")
             break
