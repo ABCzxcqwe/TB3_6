@@ -48,6 +48,9 @@ class Ambiente:
 
     # ── Getters ──────────────────────────────
     def get_id(self):              return self.__id
+    def set_id(self, nuevo_id: str):
+        """Corrige el id tras asignar el ID incremental definitivo (AMB-XXX)."""
+        self.__id = nuevo_id
     def get_nombre(self):          return self.__nombre
     def get_tipo(self):            return self.__tipo
     def get_capacidad(self):       return self.__capacidad
@@ -100,6 +103,9 @@ class Cliente:
 
     # ── Getters ──────────────────────────────
     def get_id(self):        return self.__id
+    def set_id(self, nuevo_id: str):
+        """Corrige el id tras asignar el ID incremental definitivo (CLI-XXX)."""
+        self.__id = nuevo_id
     def get_nombre(self):    return self.__nombre
     def get_email(self):     return self.__email
     def get_telefono(self):  return self.__telefono
@@ -140,6 +146,9 @@ class ServicioAdicional:
 
     # ── Getters ──────────────────────────────
     def get_id(self):             return self.__id
+    def set_id(self, nuevo_id: str):
+        """Corrige el id tras asignar el ID incremental definitivo (SRV-XXX)."""
+        self.__id = nuevo_id
     def get_nombre(self):         return self.__nombre
     def get_descripcion(self):    return self.__descripcion
     def get_costo_unitario(self): return self.__costo_unitario
@@ -182,6 +191,9 @@ class Reserva:
 
     # ── Getters ──────────────────────────────
     def get_id(self):          return self.__id
+    def set_id(self, nuevo_id: str):
+        """Corrige el id tras asignar el ID incremental definitivo (RES-XXX)."""
+        self.__id = nuevo_id
     def get_cliente(self):     return self.__cliente
     def get_ambiente(self):    return self.__ambiente
     def get_fecha(self):       return self.__fecha
