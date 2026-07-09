@@ -32,11 +32,11 @@
   header p { margin: 4px 0 0; font-size: 13px; color: #c9d4e0; }
 
   main {
-    max-width: 1180px;
+    max-width: 1200px;
     margin: 24px auto;
     padding: 0 20px 40px;
     display: grid;
-    grid-template-columns: 1.3fr 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 20px;
   }
   @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
@@ -47,6 +47,7 @@
     border-radius: 10px;
     padding: 20px;
   }
+  section.full { grid-column: 1 / -1; }
   section h2 {
     margin: 0 0 14px;
     font-size: 16px;
@@ -58,7 +59,6 @@
   section h2 .tag {
     font-size: 10px;
     font-weight: 700;
-    letter-spacing: .5px;
     background: var(--dorado);
     color: #3a2c0a;
     border-radius: 4px;
@@ -103,8 +103,6 @@
   th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--borde); }
   th { color: var(--texto-suave); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; }
   tr:hover td { background: #f9fafb; }
-  .badge-disp { color: var(--ok); font-weight: 600; font-size: 11px; }
-  .badge-nodisp { color: var(--error); font-weight: 600; font-size: 11px; }
   .id-chip { color: #8a97a8; font-size: 11px; }
 
   .estado { font-size: 12px; margin-top: 8px; min-height: 16px; }
@@ -144,99 +142,147 @@
   }
   .preguntas-ejemplo li:hover { background: #dfe9f4; }
 
-  footer { text-align: center; font-size: 11px; color: var(--texto-suave); padding: 20px; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+  .tabs button {
+    flex: 1; border-radius: 6px 6px 0 0;
+    background: #eef1f5; color: var(--texto-suave);
+  }
+  .tabs button.activo { background: var(--azul); color: #fff; }
+
+  footer { text-align: center; font-size: 11px; color: var(--texto-suave); padding: 20px; grid-column: 1 / -1; }
 </style>
 </head>
 <body>
 
 <header>
   <h1>Centro de Eventos — Panel de Gestión</h1>
-  <p>Caso 6 · 1ACC0271 · CRUD de Ambientes + Asistente de IA (Ollama)</p>
+  <p>SQLite · CRUD de Espacios, Usuarios y Eventos + Asistente de IA (Ollama)</p>
 </header>
 
 <main>
-
-  <!-- ═══════════════ CRUD DE AMBIENTES ═══════════════ -->
-  <section>
-    <h2>Ambientes <span class="tag">CRUD</span></h2>
-
-    <div class="form-grid">
-      <input type="hidden" id="ambienteId">
-      <div>
-        <label for="nombre">Nombre</label>
-        <input type="text" id="nombre" placeholder="Ej: Salon 12">
-      </div>
-      <div>
-        <label for="tipo">Tipo</label>
-        <select id="tipo">
-          <option value="salon">Salón</option>
-          <option value="auditorio">Auditorio</option>
-          <option value="terraza">Terraza</option>
-          <option value="sala_de_reuniones">Sala de reuniones</option>
-          <option value="jardin">Jardín</option>
-        </select>
-      </div>
-      <div>
-        <label for="capacidad">Capacidad (personas)</label>
-        <input type="number" id="capacidad" placeholder="Ej: 300">
-      </div>
-      <div>
-        <label for="precio">Precio por hora (S/)</label>
-        <input type="number" step="0.01" id="precio" placeholder="Ej: 80">
-      </div>
+  <section class="full">
+    <h2>Gestión <span class="tag">CRUD</span></h2>
+    <div class="tabs" id="tabs">
+      <button class="activo" onclick="cambiarTab('espacios')">Espacios</button>
+      <button onclick="cambiarTab('usuarios')">Usuarios</button>
+      <button onclick="cambiarTab('eventos')">Eventos</button>
     </div>
 
-    <div class="acciones-form">
-      <button class="btn-primario" onclick="crearAmbiente()">Crear</button>
-      <button class="btn-secundario" onclick="actualizarAmbiente()">Guardar cambios</button>
-      <button class="btn-secundario" onclick="limpiarFormulario()">Limpiar</button>
+    <!-- ═══ Espacios ═══ -->
+    <div id="tab-espacios">
+      <div class="form-grid" style="grid-template-columns:1fr">
+        <input type="hidden" id="espacioId">
+        <div>
+          <label for="espacioNombre">Nombre del espacio</label>
+          <input type="text" id="espacioNombre" placeholder="Ej: Salon 12">
+        </div>
+      </div>
+      <div class="acciones-form">
+        <button class="btn-primario" onclick="crearEspacio()">Crear</button>
+        <button class="btn-secundario" onclick="actualizarEspacio()">Guardar cambios</button>
+        <button class="btn-secundario" onclick="limpiarEspacio()">Limpiar</button>
+      </div>
+      <div id="estadoEspacio" class="estado"></div>
+      <table>
+        <thead><tr><th>ID</th><th>Nombre</th><th>Acciones</th></tr></thead>
+        <tbody id="listaEspacios"><tr><td colspan="3">Cargando…</td></tr></tbody>
+      </table>
     </div>
-    <div id="estadoAmbiente" class="estado"></div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Nombre</th><th>Tipo</th><th>Capacidad</th><th>S/ hora</th><th>Estado</th><th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="listaAmbientes">
-        <tr><td colspan="6">Cargando…</td></tr>
-      </tbody>
-    </table>
+    <!-- ═══ Usuarios ═══ -->
+    <div id="tab-usuarios" style="display:none">
+      <div class="form-grid">
+        <input type="hidden" id="usuarioId">
+        <div>
+          <label for="usuarioNombre">Nombre</label>
+          <input type="text" id="usuarioNombre" placeholder="Ej: Juan Pérez">
+        </div>
+        <div>
+          <label for="usuarioCorreo">Correo</label>
+          <input type="email" id="usuarioCorreo" placeholder="juan@correo.com">
+        </div>
+      </div>
+      <div class="acciones-form">
+        <button class="btn-primario" onclick="crearUsuario()">Crear</button>
+        <button class="btn-secundario" onclick="actualizarUsuario()">Guardar cambios</button>
+        <button class="btn-secundario" onclick="limpiarUsuario()">Limpiar</button>
+      </div>
+      <div id="estadoUsuario" class="estado"></div>
+      <table>
+        <thead><tr><th>ID</th><th>Nombre</th><th>Correo</th><th>Acciones</th></tr></thead>
+        <tbody id="listaUsuarios"><tr><td colspan="4">Cargando…</td></tr></tbody>
+      </table>
+    </div>
+
+    <!-- ═══ Eventos ═══ -->
+    <div id="tab-eventos" style="display:none">
+      <div class="form-grid">
+        <input type="hidden" id="eventoId">
+        <div>
+          <label for="eventoUsuario">ID Usuario</label>
+          <input type="number" id="eventoUsuario" placeholder="Ej: 1">
+        </div>
+        <div>
+          <label for="eventoEspacio">ID Espacio</label>
+          <input type="number" id="eventoEspacio" placeholder="Ej: 1">
+        </div>
+        <div>
+          <label for="eventoFecha">Fecha</label>
+          <input type="date" id="eventoFecha">
+        </div>
+        <div>
+          <label for="eventoCosto">Costo (S/)</label>
+          <input type="number" step="0.01" id="eventoCosto" placeholder="0.00">
+        </div>
+        <div>
+          <label for="eventoDescripcion">Descripción</label>
+          <input type="text" id="eventoDescripcion" placeholder="Opcional">
+        </div>
+      </div>
+      <div class="acciones-form">
+        <button class="btn-primario" onclick="crearEvento()">Crear</button>
+        <button class="btn-secundario" onclick="actualizarEvento()">Guardar cambios</button>
+        <button class="btn-secundario" onclick="limpiarEvento()">Limpiar</button>
+      </div>
+      <div id="estadoEvento" class="estado"></div>
+      <table>
+        <thead><tr><th>ID</th><th>Usuario</th><th>Espacio</th><th>Fecha</th><th>Costo</th><th>Descripción</th><th>Acciones</th></tr></thead>
+        <tbody id="listaEventos"><tr><td colspan="7">Cargando…</td></tr></tbody>
+      </table>
+    </div>
   </section>
 
   <!-- ═══════════════ ASISTENTE DE IA ═══════════════ -->
   <section>
     <h2>Asistente <span class="tag">IA · Ollama</span></h2>
-
     <div class="chat-log" id="chatLog">
-      <div class="msg sistema">Pregúntame sobre disponibilidad, cotizaciones o reservas del centro.</div>
+      <div class="msg sistema">Pregúntame sobre espacios, disponibilidad o eventos del centro.</div>
     </div>
-
     <div class="chat-input">
       <input type="text" id="pregunta" placeholder="Escribe tu pregunta..." onkeydown="if(event.key==='Enter') preguntar()">
       <button class="btn-primario" id="btnEnviar" onclick="preguntar()">Enviar</button>
     </div>
-
     <div class="preguntas-ejemplo">
       <div class="titulo">Preguntas de ejemplo</div>
       <ul>
-        <li onclick="usarPregunta(this)">¿Qué ambientes tienen disponibles?</li>
-        <li onclick="usarPregunta(this)">¿Está libre el Salon 12 el 2026-08-20 de 10:00 a 14:00?</li>
-        <li onclick="usarPregunta(this)">¿Cuánto costaría una Boda para 300 personas en el Salon 12, 6 horas, con Catering?</li>
-        <li onclick="usarPregunta(this)">¿Cuál fue el ambiente más reservado entre 2026-01-01 y 2026-06-30?</li>
+        <li onclick="usarPregunta(this)">¿Qué espacios hay?</li>
+        <li onclick="usarPregunta(this)">¿Está libre el Salon A el 2026-08-20?</li>
+        <li onclick="usarPregunta(this)">¿Cuánto costaría una Boda para 300 personas en el Salon A, 6 horas, con Catering?</li>
+        <li onclick="usarPregunta(this)">¿Cuál fue el espacio más utilizado entre 2026-01-01 y 2026-06-30?</li>
+        <li onclick="usarPregunta(this)">¿Qué eventos tiene Juan Pérez?</li>
       </ul>
     </div>
   </section>
-
 </main>
 
 <footer>Centro de Eventos — TB4 · 1ACC0271 Aplicaciones de Ciencias de la Computación</footer>
 
 <script>
 const API_URL = "http://localhost:800";
-const URL_AMBIENTES = API_URL + "/api/v1/ambientes";
-const URL_CHAT = API_URL + "/api/v1/chat";
+const URL_ESPACIOS = API_URL + "/api/v1/espacios";
+const URL_USUARIOS = API_URL + "/api/v1/usuarios";
+const URL_EVENTOS  = API_URL + "/api/v1/eventos";
+const URL_CHAT     = API_URL + "/api/v1/chat";
 
 const val = (id) => document.getElementById(id).value;
 const setEstado = (elId, texto, tipo) => {
@@ -245,124 +291,226 @@ const setEstado = (elId, texto, tipo) => {
   el.className = "estado " + (tipo || "");
 };
 
-// ───────────────────────── CRUD Ambientes ─────────────────────────
-
-function datosFormularioAmbiente() {
-  return {
-    nombre: val("nombre"),
-    tipo: val("tipo"),
-    capacidad: Number(val("capacidad")),
-    precio_por_hora: Number(val("precio")),
-  };
+// ─────────── Tabs ───────────
+function cambiarTab(tab) {
+  document.querySelectorAll("#tabs button").forEach(b => b.classList.remove("activo"));
+  document.querySelector(`#tabs button[onclick*="${tab}"]`).classList.add("activo");
+  ["espacios", "usuarios", "eventos"].forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = t === tab ? "" : "none";
+  });
+  if (tab === "espacios") mostrarEspacios();
+  if (tab === "usuarios")  mostrarUsuarios();
+  if (tab === "eventos")   mostrarEventos();
 }
 
-function limpiarFormulario() {
-  document.getElementById("ambienteId").value = "";
-  document.getElementById("nombre").value = "";
-  document.getElementById("capacidad").value = "";
-  document.getElementById("precio").value = "";
-  document.getElementById("tipo").selectedIndex = 0;
+// ─────────── Espacios ───────────
+function datosEspacio() {
+  return { nombre: val("espacioNombre") };
 }
-
-function mostrarAmbientes() {
-  fetch(URL_AMBIENTES)
+function limpiarEspacio() {
+  document.getElementById("espacioId").value = "";
+  document.getElementById("espacioNombre").value = "";
+}
+function mostrarEspacios() {
+  fetch(URL_ESPACIOS)
     .then(res => res.json())
-    .then(ambientes => {
-      if (!ambientes.length) {
-        document.getElementById("listaAmbientes").innerHTML =
-          `<tr><td colspan="6">Aún no hay ambientes registrados.</td></tr>`;
+    .then(items => {
+      if (!items.length) {
+        document.getElementById("listaEspacios").innerHTML =
+          `<tr><td colspan="3">Aún no hay espacios registrados.</td></tr>`;
         return;
       }
-      const filas = ambientes.map(a => `
+      document.getElementById("listaEspacios").innerHTML = items.map(a => `
         <tr>
-          <td>${a.nombre} <span class="id-chip">${a.id}</span></td>
-          <td>${a.tipo}</td>
-          <td>${a.capacidad}</td>
-          <td>S/ ${Number(a.precio_por_hora).toFixed(2)}</td>
-          <td>${String(a.esta_disponible).toLowerCase() === "true"
-                ? '<span class="badge-disp">Disponible</span>'
-                : '<span class="badge-nodisp">No disponible</span>'}</td>
+          <td><span class="id-chip">${a.id}</span></td>
+          <td>${a.nombre}</td>
           <td>
-            <button class="btn-secundario btn-chico" onclick="editarAmbiente('${a.id}')">Editar</button>
-            <button class="btn-peligro btn-chico" onclick="eliminarAmbiente('${a.id}')">Eliminar</button>
+            <button class="btn-secundario btn-chico" onclick="editarEspacio(${a.id})">Editar</button>
+            <button class="btn-peligro btn-chico" onclick="eliminarEspacio(${a.id})">Eliminar</button>
           </td>
         </tr>`).join("");
-      document.getElementById("listaAmbientes").innerHTML = filas;
     })
-    .catch(() => setEstado("estadoAmbiente", "No se pudo conectar con el backend (¿está corriendo uvicorn?).", "error"));
+    .catch(() => setEstado("estadoEspacio", "No se pudo conectar con el backend.", "error"));
 }
-
-function crearAmbiente() {
-  const datos = datosFormularioAmbiente();
-  if (!datos.nombre || !datos.capacidad || !datos.precio_por_hora) {
-    setEstado("estadoAmbiente", "Completa nombre, capacidad y precio antes de crear.", "error");
-    return;
-  }
-  fetch(URL_AMBIENTES, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(datos),
-  })
+function crearEspacio() {
+  const d = datosEspacio();
+  if (!d.nombre) { setEstado("estadoEspacio", "El nombre es obligatorio.", "error"); return; }
+  fetch(URL_ESPACIOS, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(d) })
     .then(res => { if (!res.ok) throw new Error(); return res.json(); })
-    .then(a => {
-      setEstado("estadoAmbiente", `Ambiente ${a.id} creado correctamente.`, "ok");
-      limpiarFormulario();
-      mostrarAmbientes();
-    })
-    .catch(() => setEstado("estadoAmbiente", "No se pudo crear el ambiente.", "error"));
+    .then(a => { setEstado("estadoEspacio", `Espacio ${a.id} creado.`, "ok"); limpiarEspacio(); mostrarEspacios(); })
+    .catch(() => setEstado("estadoEspacio", "No se pudo crear el espacio.", "error"));
 }
-
-function editarAmbiente(id) {
-  fetch(URL_AMBIENTES + "/" + id)
+function editarEspacio(id) {
+  fetch(URL_ESPACIOS + "/" + id)
     .then(res => res.json())
     .then(a => {
-      document.getElementById("ambienteId").value = a.id;
-      document.getElementById("nombre").value = a.nombre;
-      document.getElementById("tipo").value = a.tipo;
-      document.getElementById("capacidad").value = a.capacidad;
-      document.getElementById("precio").value = a.precio_por_hora;
-      setEstado("estadoAmbiente", `Editando ${a.id}. Modifica los campos y pulsa "Guardar cambios".`, "");
+      document.getElementById("espacioId").value = a.id;
+      document.getElementById("espacioNombre").value = a.nombre;
+      setEstado("estadoEspacio", `Editando espacio ${a.id}.`, "");
     });
 }
+function actualizarEspacio() {
+  const id = val("espacioId");
+  if (!id) { setEstado("estadoEspacio", "Selecciona 'Editar' primero.", "error"); return; }
+  fetch(URL_ESPACIOS + "/" + id, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(datosEspacio()) })
+    .then(res => { if (!res.ok) throw new Error(); return res.json(); })
+    .then(() => { setEstado("estadoEspacio", `Espacio ${id} actualizado.`, "ok"); limpiarEspacio(); mostrarEspacios(); })
+    .catch(() => setEstado("estadoEspacio", "No se pudo actualizar.", "error"));
+}
+function eliminarEspacio(id) {
+  if (!confirm(`¿Eliminar espacio ${id}?`)) return;
+  fetch(URL_ESPACIOS + "/" + id, { method: "DELETE" })
+    .then(res => { if (!res.ok) throw new Error(); })
+    .then(() => { setEstado("estadoEspacio", `Espacio ${id} eliminado.`, "ok"); mostrarEspacios(); })
+    .catch(() => setEstado("estadoEspacio", "No se pudo eliminar.", "error"));
+}
 
-function actualizarAmbiente() {
-  const id = val("ambienteId");
-  if (!id) {
-    setEstado("estadoAmbiente", "Selecciona 'Editar' en un ambiente antes de guardar cambios.", "error");
+// ─────────── Usuarios ───────────
+function datosUsuario() {
+  return { nombre: val("usuarioNombre"), correo: val("usuarioCorreo") };
+}
+function limpiarUsuario() {
+  ["usuarioId", "usuarioNombre", "usuarioCorreo"].forEach(id => document.getElementById(id).value = "");
+}
+function mostrarUsuarios() {
+  fetch(URL_USUARIOS)
+    .then(res => res.json())
+    .then(items => {
+      if (!items.length) {
+        document.getElementById("listaUsuarios").innerHTML =
+          `<tr><td colspan="4">Aún no hay usuarios registrados.</td></tr>`;
+        return;
+      }
+      document.getElementById("listaUsuarios").innerHTML = items.map(u => `
+        <tr>
+          <td><span class="id-chip">${u.id}</span></td>
+          <td>${u.nombre}</td>
+          <td>${u.correo}</td>
+          <td>
+            <button class="btn-secundario btn-chico" onclick="editarUsuario(${u.id})">Editar</button>
+            <button class="btn-peligro btn-chico" onclick="eliminarUsuario(${u.id})">Eliminar</button>
+          </td>
+        </tr>`).join("");
+    })
+    .catch(() => setEstado("estadoUsuario", "No se pudo conectar con el backend.", "error"));
+}
+function crearUsuario() {
+  const d = datosUsuario();
+  if (!d.nombre) { setEstado("estadoUsuario", "El nombre es obligatorio.", "error"); return; }
+  fetch(URL_USUARIOS, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(d) })
+    .then(res => { if (!res.ok) throw new Error(); return res.json(); })
+    .then(u => { setEstado("estadoUsuario", `Usuario ${u.id} creado.`, "ok"); limpiarUsuario(); mostrarUsuarios(); })
+    .catch(() => setEstado("estadoUsuario", "No se pudo crear el usuario.", "error"));
+}
+function editarUsuario(id) {
+  fetch(URL_USUARIOS + "/" + id)
+    .then(res => res.json())
+    .then(u => {
+      document.getElementById("usuarioId").value = u.id;
+      document.getElementById("usuarioNombre").value = u.nombre;
+      document.getElementById("usuarioCorreo").value = u.correo;
+      setEstado("estadoUsuario", `Editando usuario ${u.id}.`, "");
+    });
+}
+function actualizarUsuario() {
+  const id = val("usuarioId");
+  if (!id) { setEstado("estadoUsuario", "Selecciona 'Editar' primero.", "error"); return; }
+  fetch(URL_USUARIOS + "/" + id, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(datosUsuario()) })
+    .then(res => { if (!res.ok) throw new Error(); return res.json(); })
+    .then(() => { setEstado("estadoUsuario", `Usuario ${id} actualizado.`, "ok"); limpiarUsuario(); mostrarUsuarios(); })
+    .catch(() => setEstado("estadoUsuario", "No se pudo actualizar.", "error"));
+}
+function eliminarUsuario(id) {
+  if (!confirm(`¿Eliminar usuario ${id}?`)) return;
+  fetch(URL_USUARIOS + "/" + id, { method: "DELETE" })
+    .then(res => { if (!res.ok) throw new Error(); })
+    .then(() => { setEstado("estadoUsuario", `Usuario ${id} eliminado.`, "ok"); mostrarUsuarios(); })
+    .catch(() => setEstado("estadoUsuario", "No se pudo eliminar.", "error"));
+}
+
+// ─────────── Eventos ───────────
+function datosEvento() {
+  return {
+    usuario_id: Number(val("eventoUsuario")),
+    espacio_id: Number(val("eventoEspacio")),
+    fecha: val("eventoFecha"),
+    costo: Number(val("eventoCosto")) || 0,
+    descripcion: val("eventoDescripcion"),
+  };
+}
+function limpiarEvento() {
+  ["eventoId", "eventoUsuario", "eventoEspacio", "eventoFecha", "eventoCosto", "eventoDescripcion"].forEach(id => document.getElementById(id).value = "");
+}
+function mostrarEventos() {
+  fetch(URL_EVENTOS)
+    .then(res => res.json())
+    .then(items => {
+      if (!items.length) {
+        document.getElementById("listaEventos").innerHTML =
+          `<tr><td colspan="7">Aún no hay eventos registrados.</td></tr>`;
+        return;
+      }
+      document.getElementById("listaEventos").innerHTML = items.map(e => `
+        <tr>
+          <td><span class="id-chip">${e.id}</span></td>
+          <td>${e.usuario_id}</td>
+          <td>${e.espacio_id}</td>
+          <td>${e.fecha}</td>
+          <td>S/ ${Number(e.costo).toFixed(2)}</td>
+          <td>${e.descripcion || ""}</td>
+          <td>
+            <button class="btn-secundario btn-chico" onclick="editarEvento(${e.id})">Editar</button>
+            <button class="btn-peligro btn-chico" onclick="eliminarEvento(${e.id})">Eliminar</button>
+          </td>
+        </tr>`).join("");
+    })
+    .catch(() => setEstado("estadoEvento", "No se pudo conectar con el backend.", "error"));
+}
+function crearEvento() {
+  const d = datosEvento();
+  if (!d.usuario_id || !d.espacio_id || !d.fecha) {
+    setEstado("estadoEvento", "Completa usuario, espacio y fecha.", "error");
     return;
   }
-  fetch(URL_AMBIENTES + "/" + id, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(datosFormularioAmbiente()),
-  })
+  fetch(URL_EVENTOS, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(d) })
     .then(res => { if (!res.ok) throw new Error(); return res.json(); })
-    .then(() => {
-      setEstado("estadoAmbiente", `Ambiente ${id} actualizado.`, "ok");
-      limpiarFormulario();
-      mostrarAmbientes();
-    })
-    .catch(() => setEstado("estadoAmbiente", "No se pudo actualizar el ambiente.", "error"));
+    .then(e => { setEstado("estadoEvento", `Evento ${e.id} creado.`, "ok"); limpiarEvento(); mostrarEventos(); })
+    .catch(() => setEstado("estadoEvento", "No se pudo crear el evento.", "error"));
 }
-
-function eliminarAmbiente(id) {
-  if (!confirm(`¿Eliminar el ambiente ${id}? Esta acción no se puede deshacer.`)) return;
-  fetch(URL_AMBIENTES + "/" + id, { method: "DELETE" })
+function editarEvento(id) {
+  fetch(URL_EVENTOS + "/" + id)
+    .then(res => res.json())
+    .then(e => {
+      document.getElementById("eventoId").value = e.id;
+      document.getElementById("eventoUsuario").value = e.usuario_id;
+      document.getElementById("eventoEspacio").value = e.espacio_id;
+      document.getElementById("eventoFecha").value = e.fecha;
+      document.getElementById("eventoCosto").value = e.costo;
+      document.getElementById("eventoDescripcion").value = e.descripcion || "";
+      setEstado("estadoEvento", `Editando evento ${e.id}.`, "");
+    });
+}
+function actualizarEvento() {
+  const id = val("eventoId");
+  if (!id) { setEstado("estadoEvento", "Selecciona 'Editar' primero.", "error"); return; }
+  fetch(URL_EVENTOS + "/" + id, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(datosEvento()) })
+    .then(res => { if (!res.ok) throw new Error(); return res.json(); })
+    .then(() => { setEstado("estadoEvento", `Evento ${id} actualizado.`, "ok"); limpiarEvento(); mostrarEventos(); })
+    .catch(() => setEstado("estadoEvento", "No se pudo actualizar.", "error"));
+}
+function eliminarEvento(id) {
+  if (!confirm(`¿Eliminar evento ${id}?`)) return;
+  fetch(URL_EVENTOS + "/" + id, { method: "DELETE" })
     .then(res => { if (!res.ok) throw new Error(); })
-    .then(() => {
-      setEstado("estadoAmbiente", `Ambiente ${id} eliminado.`, "ok");
-      mostrarAmbientes();
-    })
-    .catch(() => setEstado("estadoAmbiente", "No se pudo eliminar el ambiente.", "error"));
+    .then(() => { setEstado("estadoEvento", `Evento ${id} eliminado.`, "ok"); mostrarEventos(); })
+    .catch(() => setEstado("estadoEvento", "No se pudo eliminar.", "error"));
 }
 
-// ───────────────────────── Asistente (chat) ─────────────────────────
-
+// ─────────── Asistente ───────────
 function usarPregunta(el) {
   document.getElementById("pregunta").value = el.textContent;
   preguntar();
 }
-
 function agregarMensaje(texto, clase) {
   const log = document.getElementById("chatLog");
   const div = document.createElement("div");
@@ -372,45 +520,27 @@ function agregarMensaje(texto, clase) {
   log.scrollTop = log.scrollHeight;
   return div;
 }
-
 function preguntar() {
   const pregunta = val("pregunta").trim();
   if (!pregunta) return;
-
   agregarMensaje(pregunta, "usuario");
   document.getElementById("pregunta").value = "";
   const btn = document.getElementById("btnEnviar");
   btn.disabled = true;
   const pensando = agregarMensaje("Pensando…", "sistema");
-
   fetch(URL_CHAT, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ pregunta }),
   })
-    .then(res => {
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      return res.json();
-    })
-    .then(data => {
-      pensando.remove();
-      agregarMensaje(data.respuesta, "asistente");
-    })
-    .catch(() => {
-      pensando.remove();
-      agregarMensaje(
-        "No se pudo conectar con el asistente. Verifica que el backend " +
-        "esté corriendo y que Ollama (OLLAMA_URL/OLLAMA_MODEL/OLLAMA_API_KEY) " +
-        "esté configurado en backend/.env",
-        "sistema"
-      );
-    })
+    .then(res => { if (!res.ok) throw new Error("HTTP " + res.status); return res.json(); })
+    .then(data => { pensando.remove(); agregarMensaje(data.respuesta, "asistente"); })
+    .catch(() => { pensando.remove(); agregarMensaje("No se pudo conectar con el asistente.", "sistema"); })
     .finally(() => { btn.disabled = false; });
 }
 
 // carga inicial
-mostrarAmbientes();
+mostrarEspacios();
 </script>
-
 </body>
 </html>

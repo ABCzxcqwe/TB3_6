@@ -1,47 +1,42 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional
 
 
-# ==================== AMBIENTES ====================
-
-class AmbienteCrear(BaseModel):
+class EspacioCrear(BaseModel):
     nombre: str
-    tipo: str = Field(..., description="salon, auditorio, terraza, sala_de_reuniones, jardin")
-    capacidad: int
-    precio_por_hora: float
 
 
-class AmbienteActualizar(BaseModel):
+class EspacioActualizar(BaseModel):
     nombre: Optional[str] = None
-    tipo: Optional[str] = None
-    capacidad: Optional[int] = None
-    precio_por_hora: Optional[float] = None
-    esta_disponible: Optional[bool] = None
 
 
-# ==================== RESERVAS ====================
+class UsuarioCrear(BaseModel):
+    nombre: str
+    correo: str = ""
+    clave: str = ""
 
-class ServicioEnReserva(BaseModel):
-    servicio_id: str
-    cantidad: int
+
+class UsuarioActualizar(BaseModel):
+    nombre: Optional[str] = None
+    correo: Optional[str] = None
+    clave: Optional[str] = None
 
 
-class ReservaCrear(BaseModel):
-    ambiente_id: str
-    cliente_id: str
+class EventoCrear(BaseModel):
+    usuario_id: int
+    espacio_id: int
     fecha: str = Field(..., description="YYYY-MM-DD")
-    hora_inicio: str = Field(..., description="HH:MM")
-    hora_fin: str = Field(..., description="HH:MM")
-    servicios: Optional[List[ServicioEnReserva]] = None
+    costo: float = 0.0
+    descripcion: str = ""
 
 
-class DisponibilidadConsulta(BaseModel):
-    fecha: str
-    hora_inicio: str
-    hora_fin: str
+class EventoActualizar(BaseModel):
+    usuario_id: Optional[int] = None
+    espacio_id: Optional[int] = None
+    fecha: Optional[str] = None
+    costo: Optional[float] = None
+    descripcion: Optional[str] = None
 
-
-# ==================== ASISTENTE IA ====================
 
 class PreguntaAsistente(BaseModel):
     pregunta: str

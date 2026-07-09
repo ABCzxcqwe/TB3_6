@@ -20,7 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from backend.config import CORS_ORIGINS
-from backend.routers import ambientes, reservas, asistente
+from backend.routers import espacios, usuarios, eventos, asistente
 
 app = FastAPI(
     title="Centro de Eventos - API (Caso 6)",
@@ -36,8 +36,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(ambientes.router)
-app.include_router(reservas.router)
+app.include_router(espacios.router)
+app.include_router(usuarios.router)
+app.include_router(eventos.router)
 app.include_router(asistente.router)
 
 # Sirve el frontend estático (frontend/index.html, app.js, style.css, etc.)

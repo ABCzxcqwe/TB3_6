@@ -1,243 +1,172 @@
-# ─────────────────────────────────────────────
-#  REPOSITORIOS — Capa de acceso a datos
-#  Adaptado al diagrama UML (Grupo 6)
-# ─────────────────────────────────────────────
+import sqlite3
+import os
 
-from abc import ABC, abstractmethod
-from csv_helper import CSVHelper
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "centroeventos.db")
 
 
-# ==================== INTERFAZ BASE ====================
-
-class IRepository(ABC):
-    """Interfaz base — contrato que todos los repositorios deben cumplir."""
-
-    @abstractmethod
-    def obtener_todos(self) -> list: pass
-
-    @abstractmethod
-    def guardar(self, entidad: dict) -> None: pass
-
-    @abstractmethod
-    def buscar(self, id: str) -> dict: pass
-
-    @abstractmethod
-    def eliminar(self, id: str) -> bool: pass
-
-    @abstractmethod
-    def actualizar(self, id: str, datos: dict) -> bool: pass
+def _get_conn():
+    return sqlite3.connect(DB_PATH)
 
 
-# ==================== AMBIENTE ====================
-
-class AmbienteRepository(IRepository):
-    ARCHIVO = "ambientes.csv"
-    CAMPOS  = ["id", "nombre", "tipo", "capacidad",
-               "precio_por_hora", "esta_disponible"]
-
-    def __init__(self):
-        self.csv_helper = CSVHelper()
-
+class EspacioRepository:
     def obtener_todos(self) -> list:
-        return self.csv_helper.leer_csv(self.ARCHIVO, self.CAMPOS)
+        with _get_conn() as conn:
+            rows = conn.execute("SELECT id, nombre FROM espacios ORDER BY id").fetchall()
+            return [{"id": r[0], "nombre": r[1]} for r in rows]
 
-    def guardar(self, ambiente: dict) -> None:
-        self.csv_helper.escribir_csv(self.ARCHIVO, [ambiente], self.CAMPOS)
+    def buscar(self, id: int) -> dict | None:
+        with _get_conn() as conn:
+            row = conn.execute("SELECT id, nombre FROM espacios WHERE id=?", (id,)).fetchone()
+            if row:
+                return {"id": row[0], "nombre": row[1]}
+            return None
 
-    def buscar(self, id: str) -> dict:
-        return next((a for a in self.obtener_todos()
-                     if a["id"] == id), None)
+    def guardar(self, datos: dict) -> dict:
+        with _get_conn() as conn:
+            cur = conn.execute("INSERT INTO espacios (nombre) VALUES (?)", (datos["nombre"],))
+            nuevo_id = cur.lastrowid
+            conn.commit()
+            return {"id": nuevo_id, "nombre": datos["nombre"]}
 
-    def eliminar(self, id: str) -> bool:
-        return self.csv_helper.eliminar_csv(self.ARCHIVO, id)
+    def actualizar(self, id: int, datos: dict) -> bool:
+        campos = ", ".join(f"{k}=?" for k in datos)
+        valores = list(datos.values()) + [id]
+        with _get_conn() as conn:
+            cur = conn.execute(f"UPDATE espacios SET {campos} WHERE id=?", valores)
+            conn.commit()
+            return cur.rowcount > 0
 
-    def actualizar(self, id: str, datos: dict) -> bool:
-        return self.csv_helper.actualizar_csv(self.ARCHIVO, id, datos)
-
-    # ── Filtros específicos (UML) ─────────────
-    def filtrar_por_tipo(self, tipo: str) -> list:
-        return [a for a in self.obtener_todos()
-                if a["tipo"].lower() == tipo.lower()]
-
-    def filtrar_por_capacidad_minima(self, capacidad: int) -> list:
-        resultado = []
-        for a in self.obtener_todos():
-            try:
-                if int(a["capacidad"]) >= capacidad:
-                    resultado.append(a)
-            except (ValueError, KeyError):
-                continue
-        return resultado
-
-    def obtener_disponibles(self) -> list:
-        return [a for a in self.obtener_todos()
-                if str(a.get("esta_disponible", "")).lower()
-                in ("true", "1", "sí", "si")]
+    def eliminar(self, id: int) -> bool:
+        with _get_conn() as conn:
+            cur = conn.execute("DELETE FROM espacios WHERE id=?", (id,))
+            conn.commit()
+            return cur.rowcount > 0
 
 
-# ==================== CLIENTE ====================
-
-class ClienteRepository(IRepository):
-    ARCHIVO = "clientes.csv"
-    CAMPOS  = ["id", "nombre", "email",
-               "telefono", "direccion", "documento"]
-
-    def __init__(self):
-        self.csv_helper = CSVHelper()
-
+class UsuarioRepository:
     def obtener_todos(self) -> list:
-        return self.csv_helper.leer_csv(self.ARCHIVO, self.CAMPOS)
+        with _get_conn() as conn:
+            rows = conn.execute("SELECT id, nombre, correo, clave FROM usuarios ORDER BY id").fetchall()
+            return [{"id": r[0], "nombre": r[1], "correo": r[2], "clave": r[3]} for r in rows]
 
-    def guardar(self, cliente: dict) -> None:
-        self.csv_helper.escribir_csv(self.ARCHIVO, [cliente], self.CAMPOS)
+    def buscar(self, id: int) -> dict | None:
+        with _get_conn() as conn:
+            row = conn.execute("SELECT id, nombre, correo, clave FROM usuarios WHERE id=?", (id,)).fetchone()
+            if row:
+                return {"id": row[0], "nombre": row[1], "correo": row[2], "clave": row[3]}
+            return None
 
-    def buscar(self, id: str) -> dict:
-        return next((c for c in self.obtener_todos()
-                     if c["id"] == id), None)
+    def buscar_por_nombre(self, nombre: str) -> dict | None:
+        with _get_conn() as conn:
+            row = conn.execute("SELECT id, nombre, correo, clave FROM usuarios WHERE nombre LIKE ?",
+                               (f"%{nombre}%",)).fetchone()
+            if row:
+                return {"id": row[0], "nombre": row[1], "correo": row[2], "clave": row[3]}
+            return None
 
-    def eliminar(self, id: str) -> bool:
-        return self.csv_helper.eliminar_csv(self.ARCHIVO, id)
+    def guardar(self, datos: dict) -> dict:
+        with _get_conn() as conn:
+            cur = conn.execute(
+                "INSERT INTO usuarios (nombre, correo, clave) VALUES (?, ?, ?)",
+                (datos["nombre"], datos.get("correo", ""), datos.get("clave", "")))
+            nuevo_id = cur.lastrowid
+            conn.commit()
+            return {"id": nuevo_id, "nombre": datos["nombre"],
+                    "correo": datos.get("correo", ""), "clave": datos.get("clave", "")}
 
-    def actualizar(self, id: str, datos: dict) -> bool:
-        return self.csv_helper.actualizar_csv(self.ARCHIVO, id, datos)
+    def actualizar(self, id: int, datos: dict) -> bool:
+        campos = ", ".join(f"{k}=?" for k in datos)
+        valores = list(datos.values()) + [id]
+        with _get_conn() as conn:
+            cur = conn.execute(f"UPDATE usuarios SET {campos} WHERE id=?", valores)
+            conn.commit()
+            return cur.rowcount > 0
 
-    # ── Búsquedas específicas (UML) ───────────
-    def buscar_por_email(self, email: str) -> dict:
-        return next((c for c in self.obtener_todos()
-                     if c["email"].lower() == email.lower()), None)
-
-    def buscar_por_documento(self, documento: str) -> dict:
-        return next((c for c in self.obtener_todos()
-                     if c["documento"] == documento), None)
+    def eliminar(self, id: int) -> bool:
+        with _get_conn() as conn:
+            cur = conn.execute("DELETE FROM usuarios WHERE id=?", (id,))
+            conn.commit()
+            return cur.rowcount > 0
 
 
-# ==================== SERVICIO ADICIONAL ====================
-
-class ServicioRepository(IRepository):
-    ARCHIVO = "servicios.csv"
-    CAMPOS  = ["id", "nombre", "descripcion",
-               "costo_unitario", "tipo_servicio"]
-
-    def __init__(self):
-        self.csv_helper = CSVHelper()
-
+class EventoRepository:
     def obtener_todos(self) -> list:
-        return self.csv_helper.leer_csv(self.ARCHIVO, self.CAMPOS)
+        with _get_conn() as conn:
+            rows = conn.execute(
+                "SELECT id, usuario_id, espacio_id, fecha, costo, descripcion FROM eventos ORDER BY id"
+            ).fetchall()
+            return [{"id": r[0], "usuario_id": r[1], "espacio_id": r[2],
+                     "fecha": r[3], "costo": r[4], "descripcion": r[5]} for r in rows]
 
-    def guardar(self, servicio: dict) -> None:
-        self.csv_helper.escribir_csv(self.ARCHIVO, [servicio], self.CAMPOS)
+    def buscar(self, id: int) -> dict | None:
+        with _get_conn() as conn:
+            row = conn.execute(
+                "SELECT id, usuario_id, espacio_id, fecha, costo, descripcion FROM eventos WHERE id=?",
+                (id,)).fetchone()
+            if row:
+                return {"id": row[0], "usuario_id": row[1], "espacio_id": row[2],
+                        "fecha": row[3], "costo": row[4], "descripcion": row[5]}
+            return None
 
-    def buscar(self, id: str) -> dict:
-        return next((s for s in self.obtener_todos()
-                     if s["id"] == id), None)
+    def guardar(self, datos: dict) -> dict:
+        with _get_conn() as conn:
+            cur = conn.execute(
+                "INSERT INTO eventos (usuario_id, espacio_id, fecha, costo, descripcion) VALUES (?, ?, ?, ?, ?)",
+                (datos["usuario_id"], datos["espacio_id"], datos["fecha"],
+                 datos.get("costo", 0.0), datos.get("descripcion", "")))
+            nuevo_id = cur.lastrowid
+            conn.commit()
+            return {"id": nuevo_id, **{k: datos.get(k) for k in ("usuario_id", "espacio_id", "fecha", "costo", "descripcion")}}
 
-    def eliminar(self, id: str) -> bool:
-        return self.csv_helper.eliminar_csv(self.ARCHIVO, id)
+    def actualizar(self, id: int, datos: dict) -> bool:
+        campos = ", ".join(f"{k}=?" for k in datos)
+        valores = list(datos.values()) + [id]
+        with _get_conn() as conn:
+            cur = conn.execute(f"UPDATE eventos SET {campos} WHERE id=?", valores)
+            conn.commit()
+            return cur.rowcount > 0
 
-    def actualizar(self, id: str, datos: dict) -> bool:
-        return self.csv_helper.actualizar_csv(self.ARCHIVO, id, datos)
+    def eliminar(self, id: int) -> bool:
+        with _get_conn() as conn:
+            cur = conn.execute("DELETE FROM eventos WHERE id=?", (id,))
+            conn.commit()
+            return cur.rowcount > 0
 
-    # ── Filtro específico (UML) ───────────────
-    def filtrar_por_tipo(self, tipo: str) -> list:
-        return [s for s in self.obtener_todos()
-                if s["tipo_servicio"].lower() == tipo.lower()]
+    def filtrar_por_usuario(self, usuario_id: int) -> list:
+        with _get_conn() as conn:
+            rows = conn.execute(
+                "SELECT id, usuario_id, espacio_id, fecha, costo, descripcion FROM eventos WHERE usuario_id=? ORDER BY id",
+                (usuario_id,)).fetchall()
+            return [{"id": r[0], "usuario_id": r[1], "espacio_id": r[2],
+                     "fecha": r[3], "costo": r[4], "descripcion": r[5]} for r in rows]
 
-
-# ==================== RESERVA ====================
-
-class ReservaRepository(IRepository):
-    ARCHIVO          = "reservas.csv"
-    ARCHIVO_SERVICIOS = "reservas_servicios.csv"
-    CAMPOS_RESERVA   = ["id", "cliente_id", "ambiente_id", "fecha",
-                        "hora_inicio", "hora_fin", "estado", "costo_total"]
-    CAMPOS_SERVICIOS = ["reserva_id", "servicio_id", "cantidad", "costo"]
-
-    def __init__(self):
-        self.csv_helper = CSVHelper()
-
-    # ── IRepository ──────────────────────────
-    def obtener_todos(self) -> list:
-        return self.csv_helper.leer_csv(self.ARCHIVO, self.CAMPOS_RESERVA)
-
-    # Alias semántico usado por los servicios
-    def obtener_todas(self) -> list:
-        return self.obtener_todos()
-
-    def guardar(self, reserva: dict,
-                servicios: list = None) -> None:
-        self.csv_helper.escribir_csv(
-            self.ARCHIVO, [reserva], self.CAMPOS_RESERVA)
-        if servicios:
-            self.csv_helper.escribir_csv(
-                self.ARCHIVO_SERVICIOS, servicios, self.CAMPOS_SERVICIOS)
-
-    def buscar(self, id: str) -> dict:
-        return next((r for r in self.obtener_todos()
-                     if r["id"] == id), None)
-
-    def eliminar(self, id: str) -> bool:
-        ok = self.csv_helper.eliminar_csv(self.ARCHIVO, id)
-        # También elimina los servicios asociados
-        self.csv_helper.eliminar_csv(
-            self.ARCHIVO_SERVICIOS, id, campo="reserva_id")
-        return ok
-
-    def actualizar(self, id: str, datos: dict) -> bool:
-        return self.csv_helper.actualizar_csv(self.ARCHIVO, id, datos)
-
-    # ── Métodos adicionales (UML) ─────────────
-    def obtener_servicios_reserva(self, reserva_id: str) -> list:
-        todos = self.csv_helper.leer_csv(
-            self.ARCHIVO_SERVICIOS, self.CAMPOS_SERVICIOS)
-        return [s for s in todos if s["reserva_id"] == reserva_id]
+    def filtrar_por_espacio(self, espacio_id: int) -> list:
+        with _get_conn() as conn:
+            rows = conn.execute(
+                "SELECT id, usuario_id, espacio_id, fecha, costo, descripcion FROM eventos WHERE espacio_id=? ORDER BY id",
+                (espacio_id,)).fetchall()
+            return [{"id": r[0], "usuario_id": r[1], "espacio_id": r[2],
+                     "fecha": r[3], "costo": r[4], "descripcion": r[5]} for r in rows]
 
     def filtrar_por_fecha(self, fecha: str) -> list:
-        return [r for r in self.obtener_todos()
-                if r["fecha"] == fecha]
+        with _get_conn() as conn:
+            rows = conn.execute(
+                "SELECT id, usuario_id, espacio_id, fecha, costo, descripcion FROM eventos WHERE fecha=? ORDER BY id",
+                (fecha,)).fetchall()
+            return [{"id": r[0], "usuario_id": r[1], "espacio_id": r[2],
+                     "fecha": r[3], "costo": r[4], "descripcion": r[5]} for r in rows]
 
-    def filtrar_por_ambiente(self, ambiente_id: str) -> list:
-        return [r for r in self.obtener_todos()
-                if r["ambiente_id"] == ambiente_id
-                and r["estado"] == "confirmada"]
+    def filtrar_por_fecha_rango(self, fecha_ini: str, fecha_fin: str) -> list:
+        with _get_conn() as conn:
+            rows = conn.execute(
+                "SELECT id, usuario_id, espacio_id, fecha, costo, descripcion FROM eventos WHERE fecha BETWEEN ? AND ? ORDER BY id",
+                (fecha_ini, fecha_fin)).fetchall()
+            return [{"id": r[0], "usuario_id": r[1], "espacio_id": r[2],
+                     "fecha": r[3], "costo": r[4], "descripcion": r[5]} for r in rows]
 
-    def filtrar_por_cliente(self, cliente_id: str) -> list:
-        return [r for r in self.obtener_todos()
-                if r["cliente_id"] == cliente_id]
-
-    def filtrar_por_estado(self, estado: str) -> list:
-        return [r for r in self.obtener_todos()
-                if r["estado"].lower() == estado.lower()]
-
-    def filtrar_por_fecha_rango(self, fecha_ini: str,
-                                 fecha_fin: str) -> list:
-        return [r for r in self.obtener_todos()
-                if fecha_ini <= r["fecha"] <= fecha_fin]
-
-    def agregar_servicio(self, fila: dict) -> None:
-        """Agrega una fila a reservas_servicios.csv."""
-        self.csv_helper.escribir_csv(
-            self.ARCHIVO_SERVICIOS, [fila], self.CAMPOS_SERVICIOS)
-
-    def quitar_servicio(self, reserva_id: str,
-                        servicio_id: str) -> bool:
-        """Elimina la fila de un servicio en reservas_servicios.csv.
-        Retorna True si existía y fue eliminada."""
-        todos = self.csv_helper.leer_csv(
-            self.ARCHIVO_SERVICIOS, self.CAMPOS_SERVICIOS)
-        filtrados = [s for s in todos
-                     if not (s["reserva_id"] == reserva_id
-                             and s["servicio_id"] == servicio_id)]
-        if len(filtrados) == len(todos):
-            return False
-        self.csv_helper._reescribir(self.ARCHIVO_SERVICIOS, filtrados)
-        return True
-
-    def verificar_conflictos(self, ambiente_id: str, fecha: str,
-                              hora_inicio: str, hora_fin: str) -> bool:
-        """Retorna True si HAY conflicto (el horario está ocupado)."""
-        for r in self.filtrar_por_ambiente(ambiente_id):
-            if r["fecha"] == fecha:
-                if not (hora_fin <= r["hora_inicio"]
-                        or hora_inicio >= r["hora_fin"]):
-                    return True
-        return False
+    def verificar_conflictos(self, espacio_id: int, fecha: str) -> bool:
+        with _get_conn() as conn:
+            row = conn.execute(
+                "SELECT 1 FROM eventos WHERE espacio_id=? AND fecha=? LIMIT 1",
+                (espacio_id, fecha)).fetchone()
+            return row is not None

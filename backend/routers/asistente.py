@@ -7,17 +7,11 @@ from backend.tools import TOOLS_MAP, TOOLS_SCHEMA
 
 router = APIRouter(prefix="/api/v1", tags=["Asistente IA"])
 
-# Instrucciones del asistente (rol del sistema, igual que SYSTEM_PROMPT de PagoYa)
+# Instrucciones del asistente
 SYSTEM_PROMPT = """
-Eres el asistente virtual del Centro de Eventos (Caso 6).
-Usa las herramientas disponibles para consultar ambientes, verificar
-disponibilidad, cotizar eventos, consultar reservas de clientes y crear
-reservas reales en el sistema.
-Identifica ambientes y clientes por su NOMBRE (nunca pidas ni uses ids
-como AMB-001 o CLI-001); las herramientas los buscan internamente.
-Para calcular cualquier precio o costo, SIEMPRE usa la herramienta
-cotizar_evento; nunca inventes un monto tu mismo.
+Eres el asistente virtual del Centro de Eventos.
 Responde en español y de forma breve.
+Usa las herramientas disponibles para responder preguntas.
 """
 
 
@@ -37,6 +31,7 @@ def _llamar_ollama(messages: list, incluir_tools: bool) -> dict:
             timeout=180,
         )
         resp.raise_for_status()
+        return resp.json()["message"]
     except requests.exceptions.ConnectionError:
         raise HTTPException(
             503,
@@ -46,7 +41,6 @@ def _llamar_ollama(messages: list, incluir_tools: bool) -> dict:
         )
     except requests.exceptions.HTTPError as e:
         raise HTTPException(502, f"Ollama devolvió un error: {e}")
-    return resp.json()["message"]
 
 
 @router.post("/chat", response_model=RespuestaAsistente)
@@ -70,9 +64,9 @@ def chat(payload: PreguntaAsistente):
 
     msg = _llamar_ollama(messages, incluir_tools=True)
 
-    herramientas_usadas = []
     if tool_calls := msg.get("tool_calls"):
-        messages.append(msg)
+        respuestas = []
+        contexto = []
         for call in tool_calls:
             nombre_fn = call["function"]["name"]
             args = call["function"]["arguments"]
@@ -84,13 +78,11 @@ def chat(payload: PreguntaAsistente):
                     resultado = fn(**args)
                 except Exception as e:
                     resultado = f"Error ejecutando {nombre_fn}: {e}"
-            herramientas_usadas.append({"nombre": nombre_fn, "argumentos": args})
-            messages.append({"role": "tool", "content": resultado})
-
-        # segunda llamada: el modelo redacta la respuesta final con los datos reales
-        msg = _llamar_ollama(messages, incluir_tools=False)
+            respuestas.append(resultado)
+            contexto.append({"nombre": nombre_fn, "argumentos": args})
+        texto = "\n".join(respuestas)
+        return RespuestaAsistente(respuesta=texto, contexto_usado={"herramientas_usadas": contexto})
 
     return RespuestaAsistente(
         respuesta=msg["content"],
-        contexto_usado={"herramientas_usadas": herramientas_usadas} if herramientas_usadas else None,
     )
