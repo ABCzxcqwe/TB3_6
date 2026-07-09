@@ -1,0 +1,16 @@
+#configurar entorno virtual
+
+python3 -m venv .venv
+source .venv/bin/activate      # Linux/Mac
+.venv\Scripts\activate       # Windows
+
+
+#instalar librerias
+pip install fastapi uvicorn requests
+
+pip install numpy pandas matplotlib scikit-learn
+
+#ejecutar ollama
+ollama serve                     # en otra terminal
+ollama pull llama3                # una sola vez
+uvicorn backend.app:app --reload --port 8000

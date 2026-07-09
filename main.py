@@ -1,7 +1,6 @@
 # ─────────────────────────────────────────────
 #  MAIN — Menú principal del programa
 #  Centro de Eventos y Reservas — Caso 6
-#  Adaptado al diagrama UML (Grupo 6)
 # ─────────────────────────────────────────────
 
 import os

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Centro de Eventos - Panel</title>
+<style>
+  :root {
+    --azul-oscuro: #10233d;
+    --azul: #1e3a5f;
+    --dorado: #c99a3d;
+    --gris-claro: #f4f6f8;
+    --borde: #dbe1e8;
+    --texto: #1a1a1a;
+    --texto-suave: #5a6472;
+    --ok: #2f7d4f;
+    --error: #b23b3b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", Calibri, Arial, sans-serif;
+    color: var(--texto);
+    margin: 0;
+    background: var(--gris-claro);
+  }
+  header {
+    background: linear-gradient(120deg, var(--azul-oscuro), var(--azul));
+    color: #fff;
+    padding: 22px 32px;
+  }
+  header h1 { margin: 0; font-size: 22px; letter-spacing: .3px; }
+  header p { margin: 4px 0 0; font-size: 13px; color: #c9d4e0; }
+
+  main {
+    max-width: 1180px;
+    margin: 24px auto;
+    padding: 0 20px 40px;
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+
+  section {
+    background: #fff;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  section h2 {
+    margin: 0 0 14px;
+    font-size: 16px;
+    color: var(--azul-oscuro);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  section h2 .tag {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    background: var(--dorado);
+    color: #3a2c0a;
+    border-radius: 4px;
+    padding: 2px 6px;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  label { font-size: 12px; color: var(--texto-suave); display: block; margin-bottom: 3px; }
+  input, select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--borde);
+    border-radius: 6px;
+    font-size: 13px;
+    background: #fff;
+  }
+  input:focus, select:focus { outline: 2px solid var(--azul); outline-offset: 1px; }
+
+  .acciones-form { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: 6px;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: opacity .15s;
+  }
+  button:hover { opacity: .88; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-primario { background: var(--azul); color: #fff; }
+  .btn-secundario { background: #eef1f5; color: var(--azul-oscuro); }
+  .btn-peligro { background: #fbeaea; color: var(--error); }
+  .btn-chico { padding: 5px 10px; font-size: 12px; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--borde); }
+  th { color: var(--texto-suave); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; }
+  tr:hover td { background: #f9fafb; }
+  .badge-disp { color: var(--ok); font-weight: 600; font-size: 11px; }
+  .badge-nodisp { color: var(--error); font-weight: 600; font-size: 11px; }
+  .id-chip { color: #8a97a8; font-size: 11px; }
+
+  .estado { font-size: 12px; margin-top: 8px; min-height: 16px; }
+  .estado.ok { color: var(--ok); }
+  .estado.error { color: var(--error); }
+
+  .chat-log {
+    height: 320px;
+    overflow-y: auto;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    padding: 12px;
+    background: var(--gris-claro);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .msg { max-width: 90%; padding: 9px 12px; border-radius: 10px; font-size: 13px; line-height: 1.45; white-space: pre-wrap; }
+  .msg.usuario { align-self: flex-end; background: var(--azul); color: #fff; border-bottom-right-radius: 2px; }
+  .msg.asistente { align-self: flex-start; background: #fff; border: 1px solid var(--borde); border-bottom-left-radius: 2px; }
+  .msg.sistema { align-self: center; color: var(--texto-suave); font-style: italic; font-size: 12px; }
+
+  .chat-input { display: flex; gap: 8px; }
+  .chat-input input { flex: 1; }
+
+  .preguntas-ejemplo { margin-top: 14px; }
+  .preguntas-ejemplo .titulo { font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: var(--texto-suave); margin-bottom: 6px; }
+  .preguntas-ejemplo ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+  .preguntas-ejemplo li {
+    font-size: 12.5px;
+    color: var(--azul);
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 6px;
+    background: #eef3f9;
+  }
+  .preguntas-ejemplo li:hover { background: #dfe9f4; }
+
+  footer { text-align: center; font-size: 11px; color: var(--texto-suave); padding: 20px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Centro de Eventos — Panel de Gestión</h1>
+  <p>Caso 6 · 1ACC0271 · CRUD de Ambientes + Asistente de IA (Ollama)</p>
+</header>
+
+<main>
+
+  <!-- ═══════════════ CRUD DE AMBIENTES ═══════════════ -->
+  <section>
+    <h2>Ambientes <span class="tag">CRUD</span></h2>
+
+    <div class="form-grid">
+      <input type="hidden" id="ambienteId">
+      <div>
+        <label for="nombre">Nombre</label>
+        <input type="text" id="nombre" placeholder="Ej: Salon 12">
+      </div>
+      <div>
+        <label for="tipo">Tipo</label>
+        <select id="tipo">
+          <option value="salon">Salón</option>
+          <option value="auditorio">Auditorio</option>
+          <option value="terraza">Terraza</option>
+          <option value="sala_de_reuniones">Sala de reuniones</option>
+          <option value="jardin">Jardín</option>
+        </select>
+      </div>
+      <div>
+        <label for="capacidad">Capacidad (personas)</label>
+        <input type="number" id="capacidad" placeholder="Ej: 300">
+      </div>
+      <div>
+        <label for="precio">Precio por hora (S/)</label>
+        <input type="number" step="0.01" id="precio" placeholder="Ej: 80">
+      </div>
+    </div>
+
+    <div class="acciones-form">
+      <button class="btn-primario" onclick="crearAmbiente()">Crear</button>
+      <button class="btn-secundario" onclick="actualizarAmbiente()">Guardar cambios</button>
+      <button class="btn-secundario" onclick="limpiarFormulario()">Limpiar</button>
+    </div>
+    <div id="estadoAmbiente" class="estado"></div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th><th>Tipo</th><th>Capacidad</th><th>S/ hora</th><th>Estado</th><th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="listaAmbientes">
+        <tr><td colspan="6">Cargando…</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ═══════════════ ASISTENTE DE IA ═══════════════ -->
+  <section>
+    <h2>Asistente <span class="tag">IA · Ollama</span></h2>
+
+    <div class="chat-log" id="chatLog">
+      <div class="msg sistema">Pregúntame sobre disponibilidad, cotizaciones o reservas del centro.</div>
+    </div>
+
+    <div class="chat-input">
+      <input type="text" id="pregunta" placeholder="Escribe tu pregunta..." onkeydown="if(event.key==='Enter') preguntar()">
+      <button class="btn-primario" id="btnEnviar" onclick="preguntar()">Enviar</button>
+    </div>
+
+    <div class="preguntas-ejemplo">
+      <div class="titulo">Preguntas de ejemplo</div>
+      <ul>
+        <li onclick="usarPregunta(this)">¿Qué ambientes tienen disponibles?</li>
+        <li onclick="usarPregunta(this)">¿Está libre el Salon 12 el 2026-08-20 de 10:00 a 14:00?</li>
+        <li onclick="usarPregunta(this)">¿Cuánto costaría una Boda para 300 personas en el Salon 12, 6 horas, con Catering?</li>
+        <li onclick="usarPregunta(this)">¿Cuál fue el ambiente más reservado entre 2026-01-01 y 2026-06-30?</li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<footer>Centro de Eventos — TB4 · 1ACC0271 Aplicaciones de Ciencias de la Computación</footer>
+
+<script>
+const API_URL = "http://localhost:800";
+const URL_AMBIENTES = API_URL + "/api/v1/ambientes";
+const URL_CHAT = API_URL + "/api/v1/chat";
+
+const val = (id) => document.getElementById(id).value;
+const setEstado = (elId, texto, tipo) => {
+  const el = document.getElementById(elId);
+  el.textContent = texto;
+  el.className = "estado " + (tipo || "");
+};
+
+// ───────────────────────── CRUD Ambientes ─────────────────────────
+
+function datosFormularioAmbiente() {
+  return {
+    nombre: val("nombre"),
+    tipo: val("tipo"),
+    capacidad: Number(val("capacidad")),
+    precio_por_hora: Number(val("precio")),
+  };
+}
+
+function limpiarFormulario() {
+  document.getElementById("ambienteId").value = "";
+  document.getElementById("nombre").value = "";
+  document.getElementById("capacidad").value = "";
+  document.getElementById("precio").value = "";
+  document.getElementById("tipo").selectedIndex = 0;
+}
+
+function mostrarAmbientes() {
+  fetch(URL_AMBIENTES)
+    .then(res => res.json())
+    .then(ambientes => {
+      if (!ambientes.length) {
+        document.getElementById("listaAmbientes").innerHTML =
+          `<tr><td colspan="6">Aún no hay ambientes registrados.</td></tr>`;
+        return;
+      }
+      const filas = ambientes.map(a => `
+        <tr>
+          <td>${a.nombre} <span class="id-chip">${a.id}</span></td>
+          <td>${a.tipo}</td>
+          <td>${a.capacidad}</td>
+          <td>S/ ${Number(a.precio_por_hora).toFixed(2)}</td>
+          <td>${String(a.esta_disponible).toLowerCase() === "true"
+                ? '<span class="badge-disp">Disponible</span>'
+                : '<span class="badge-nodisp">No disponible</span>'}</td>
+          <td>
+            <button class="btn-secundario btn-chico" onclick="editarAmbiente('${a.id}')">Editar</button>
+            <button class="btn-peligro btn-chico" onclick="eliminarAmbiente('${a.id}')">Eliminar</button>
+          </td>
+        </tr>`).join("");
+      document.getElementById("listaAmbientes").innerHTML = filas;
+    })
+    .catch(() => setEstado("estadoAmbiente", "No se pudo conectar con el backend (¿está corriendo uvicorn?).", "error"));
+}
+
+function crearAmbiente() {
+  const datos = datosFormularioAmbiente();
+  if (!datos.nombre || !datos.capacidad || !datos.precio_por_hora) {
+    setEstado("estadoAmbiente", "Completa nombre, capacidad y precio antes de crear.", "error");
+    return;
+  }
+  fetch(URL_AMBIENTES, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(datos),
+  })
+    .then(res => { if (!res.ok) throw new Error(); return res.json(); })
+    .then(a => {
+      setEstado("estadoAmbiente", `Ambiente ${a.id} creado correctamente.`, "ok");
+      limpiarFormulario();
+      mostrarAmbientes();
+    })
+    .catch(() => setEstado("estadoAmbiente", "No se pudo crear el ambiente.", "error"));
+}
+
+function editarAmbiente(id) {
+  fetch(URL_AMBIENTES + "/" + id)
+    .then(res => res.json())
+    .then(a => {
+      document.getElementById("ambienteId").value = a.id;
+      document.getElementById("nombre").value = a.nombre;
+      document.getElementById("tipo").value = a.tipo;
+      document.getElementById("capacidad").value = a.capacidad;
+      document.getElementById("precio").value = a.precio_por_hora;
+      setEstado("estadoAmbiente", `Editando ${a.id}. Modifica los campos y pulsa "Guardar cambios".`, "");
+    });
+}
+
+function actualizarAmbiente() {
+  const id = val("ambienteId");
+  if (!id) {
+    setEstado("estadoAmbiente", "Selecciona 'Editar' en un ambiente antes de guardar cambios.", "error");
+    return;
+  }
+  fetch(URL_AMBIENTES + "/" + id, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(datosFormularioAmbiente()),
+  })
+    .then(res => { if (!res.ok) throw new Error(); return res.json(); })
+    .then(() => {
+      setEstado("estadoAmbiente", `Ambiente ${id} actualizado.`, "ok");
+      limpiarFormulario();
+      mostrarAmbientes();
+    })
+    .catch(() => setEstado("estadoAmbiente", "No se pudo actualizar el ambiente.", "error"));
+}
+
+function eliminarAmbiente(id) {
+  if (!confirm(`¿Eliminar el ambiente ${id}? Esta acción no se puede deshacer.`)) return;
+  fetch(URL_AMBIENTES + "/" + id, { method: "DELETE" })
+    .then(res => { if (!res.ok) throw new Error(); })
+    .then(() => {
+      setEstado("estadoAmbiente", `Ambiente ${id} eliminado.`, "ok");
+      mostrarAmbientes();
+    })
+    .catch(() => setEstado("estadoAmbiente", "No se pudo eliminar el ambiente.", "error"));
+}
+
+// ───────────────────────── Asistente (chat) ─────────────────────────
+
+function usarPregunta(el) {
+  document.getElementById("pregunta").value = el.textContent;
+  preguntar();
+}
+
+function agregarMensaje(texto, clase) {
+  const log = document.getElementById("chatLog");
+  const div = document.createElement("div");
+  div.className = "msg " + clase;
+  div.textContent = texto;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+  return div;
+}
+
+function preguntar() {
+  const pregunta = val("pregunta").trim();
+  if (!pregunta) return;
+
+  agregarMensaje(pregunta, "usuario");
+  document.getElementById("pregunta").value = "";
+  const btn = document.getElementById("btnEnviar");
+  btn.disabled = true;
+  const pensando = agregarMensaje("Pensando…", "sistema");
+
+  fetch(URL_CHAT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pregunta }),
+  })
+    .then(res => {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    })
+    .then(data => {
+      pensando.remove();
+      agregarMensaje(data.respuesta, "asistente");
+    })
+    .catch(() => {
+      pensando.remove();
+      agregarMensaje(
+        "No se pudo conectar con el asistente. Verifica que el backend " +
+        "esté corriendo y que Ollama (OLLAMA_URL/OLLAMA_MODEL/OLLAMA_API_KEY) " +
+        "esté configurado en backend/.env",
+        "sistema"
+      );
+    })
+    .finally(() => { btn.disabled = false; });
+}
+
+// carga inicial
+mostrarAmbientes();
+</script>
+
+</body>
+</html>

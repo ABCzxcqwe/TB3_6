@@ -63,8 +63,8 @@ class AmbienteService(BaseService):
         )
         todos    = self.ambiente_repo.obtener_todos()
         nuevo_id = self._generar_id(todos, "AMB")
+        ambiente.set_id(nuevo_id)
         d = ambiente.to_dict()
-        d["id"] = nuevo_id
         self.ambiente_repo.guardar(d)
         print(f"  ✔ Ambiente registrado: [{nuevo_id}] {d['nombre']}")
         return ambiente
@@ -131,8 +131,8 @@ class ClienteService(BaseService):
 
         todos    = self.cliente_repo.obtener_todos()
         nuevo_id = self._generar_id(todos, "CLI")
+        cliente.set_id(nuevo_id)
         d = cliente.to_dict()
-        d["id"] = nuevo_id
         self.cliente_repo.guardar(d)
         print(f"  ✔ Cliente registrado: [{nuevo_id}] {d['nombre']}")
         return cliente
@@ -184,8 +184,8 @@ class ServicioService(BaseService):
         )
         todos    = self.servicio_repo.obtener_todos()
         nuevo_id = self._generar_id(todos, "SRV")
+        srv.set_id(nuevo_id)
         d = srv.to_dict()
-        d["id"] = nuevo_id
         self.servicio_repo.guardar(d)
         print(f"  ✔ Servicio registrado: [{nuevo_id}] {d['nombre']}")
         return srv
@@ -324,8 +324,8 @@ class ReservaService(BaseService):
         # Asignar ID incremental y corregir IDs de relaciones
         todos    = self.reserva_repo.obtener_todos()
         nuevo_id = self._generar_id(todos, "RES")
+        reserva.set_id(nuevo_id)
         d = reserva.to_dict()
-        d["id"]          = nuevo_id
         d["ambiente_id"] = amb_dict["id"]   # usar AMB-001, no el UUID interno
         d["cliente_id"]  = cli_dict["id"]   # usar CLI-001, no el UUID interno
 
