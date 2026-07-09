@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException
 from servicios import ReservaService
 from backend.schemas import ReservaCrear
 
-router = APIRouter(prefix="/reservas", tags=["Reservas"])
+router = APIRouter(prefix="/api/v1/reservas", tags=["Reservas"])
 res_svc = ReservaService()
 
 

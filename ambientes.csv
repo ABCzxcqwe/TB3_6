@@ -1,0 +1,2 @@
+id,nombre,tipo,capacidad,precio_por_hora,esta_disponible
+AMB-001,Salon 12,salon,300,80.0,True

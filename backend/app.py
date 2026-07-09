@@ -4,13 +4,16 @@ Backend web del Centro de Eventos - TB4 (1ACC0271)
 Ejecutar desde la RAIZ del proyecto (donde están servicios.py, repositorios.py, etc.):
     uvicorn backend.app:app --reload --port 8000
 
-Luego abrir http://localhost:8000/docs para ver y probar todos los endpoints
+Luego abrir http://localhost:800/docs para ver y probar todos los endpoints
 (evidencia automática de funcionamiento para el informe).
 
 Requiere: pip install fastapi uvicorn requests
 Requiere Ollama corriendo localmente: `ollama serve`  y un modelo descargado,
 ej: `ollama pull llama3`
 """
+
+from dotenv import load_dotenv
+load_dotenv("backend/.env")
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
