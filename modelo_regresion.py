@@ -13,18 +13,18 @@ RUTA_DATASET = AQUI / "reservas.csv"
 ASSETS = AQUI / "assets"
 ASSETS.mkdir(exist_ok=True)
 
-
+#verifica las dimenciones(filas y columas) paraentender el volumen de datos(EDA)
 def fase1_cargar_datos():
     df = pd.read_csv(RUTA_DATASET)
     print(f"FASE 1 - Datos cargados: {df.shape[0]} filas, {df.shape[1]} columnas")
     return df
 
-
+#deteccion de valores nulos(fase2)
 def fase2_revisar_suciedad(df):
     nulos = df.isnull().sum()
     print("\nFASE 2 - Datos vacios por columna:")
     print(nulos[nulos > 0].to_string())
-
+#visualiza que datos, toda desicciones que datos descartar
     nulos[nulos > 0].plot(kind="bar", color="tomato")
     plt.title("Datos vacios antes de limpiar")
     plt.ylabel("Cantidad de nulos")
@@ -76,7 +76,8 @@ def fase6_evaluar(modelo, X_test, y_test):
     print("2_prediccion.png guardado")
     return y_pred
 
-
+# analiza que variables influyen más en el monto, aunque cuenta como parte de regresion
+#tambien es parte de EDA para entender que factores del centro de eventos son los que realmente mueven el dinero
 def fase7_coeficientes(modelo, X):
     print("\nFASE 7 - Coeficientes del modelo (que variables influyen mas):")
     coefs = pd.Series(modelo.coef_, index=X.columns)

@@ -15,7 +15,8 @@ def cargar_datos():
     df = pd.read_csv(RUTA_DATASET)
     return df
 
-
+#realizas conteos, promedios y visualizaciones (como gráficos de barras o histogramas) para entender la distribución de las variables
+#descubre paatrones antes de poder predecirlos
 # ========= 3.1 CONOCER LOS DATOS =========
 def conocer_datos(df):
     print("== 3.1 Conocer los datos ==")
